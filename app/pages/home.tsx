@@ -21,8 +21,6 @@ import CardNews from '../components/cardNews';
 const theme = extendTheme({
     colors: {
         primary: {
-            50: '#eff6ff',
-            500: '#3b82f6',
             700: '#3A74C0',
         },
     },
@@ -77,12 +75,12 @@ const Home = () => {
 
                 <ScrollView flex={1} showsVerticalScrollIndicator={false} bg="blue.500">
 
-                    <Box bg="primary.700" px={5} py={4}>
+                    <Box bg="primary.700" px={5} py={5}>
                         <HStack alignItems="center" space={3}>
                             <Avatar bg="cyan.500" source={{
                                 uri: "https://images.unsplash.com/photo-1603415526960-f7e0328c63b1?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
                             }}>
-                                TE
+                                RB
                             </Avatar>
                             <VStack flex={1}>
                                 <Text fontSize="md" fontWeight="semibold" color="white">

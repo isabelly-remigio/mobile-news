@@ -47,8 +47,8 @@ export default function LoginScreen() {
                         source={logo}
                         alt="Logo"
                         resizeMode="contain"
-                        size="80"           // ou w={24} h={24} 
-                        mb={4}              // margem inferior para separar do card
+                        size="80"          
+                        mb={4}              
                     />
                         </Center>
                         <VStack space={3} mt={5}>
