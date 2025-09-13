@@ -2,8 +2,10 @@
 import React from "react";
 import { Box, HStack, Pressable, Center, Icon, Text } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
+import { router, useRouter } from "expo-router";
 
- function Footer() {
+
+function Footer() {
   return (
     <Box bg="white" safeAreaBottom shadow={6}>
       <HStack bg="white" alignItems="center">
@@ -13,7 +15,12 @@ import { Ionicons } from "@expo/vector-icons";
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon as={Ionicons} name="home" size="md" color="blue.500" />
-                <Text fontSize="xs" color="blue.500" fontWeight="semibold" mt={1}>
+                <Text
+                  fontSize="xs"
+                  color="blue.500"
+                  fontWeight="semibold"
+                  mt={1}
+                >
                   Home
                 </Text>
               </Center>
@@ -55,7 +62,12 @@ import { Ionicons } from "@expo/vector-icons";
           </Pressable>
 
           {/* Perfil */}
-          <Pressable flex={1} alignItems="center" py={3}>
+          <Pressable
+            flex={1}
+            alignItems="center"
+            py={3}
+            onPress={() => router.push("/pages/login")}
+          >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
@@ -75,4 +87,4 @@ import { Ionicons } from "@expo/vector-icons";
     </Box>
   );
 }
-export default Footer
+export default Footer;
