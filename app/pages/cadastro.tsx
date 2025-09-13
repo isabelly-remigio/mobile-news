@@ -15,6 +15,7 @@ import {
   extendTheme,
 } from "native-base";
 import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 const theme = extendTheme({
   colors: {
@@ -116,7 +117,7 @@ function Cadastro() {
                   }
                 />
 
-                <Button bg="info.700" mt={2}>
+                <Button bg="info.700" mt={2} onPress={() => router.push('pages/login')}>
                   Cadastrar
                 </Button>
 
@@ -128,9 +129,9 @@ function Cadastro() {
                         color: "primary.700",
                         fontWeight: "bold",
                         textDecorationLine: "none",
-                      }}
+                      }} onPress={() => router.push('pages/login')}
                     >
-                      Login
+                      Faça o login
                     </Link>
                   </Text>
                 </Center>

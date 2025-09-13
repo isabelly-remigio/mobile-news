@@ -112,7 +112,7 @@ export default function LoginScreen() {
               </Button>
 
               <Center mt={4}>
-                <Text fontSize="sm" color="coolGray.700">
+                <Text fontSize="sm" color="coolGray.700" onPress={() => router.push('pages/cadastro')}>
                   Ainda não tem conta?{" "}
                   <Link
                     _text={{
