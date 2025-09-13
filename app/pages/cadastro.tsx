@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StatusBar, Platform, KeyboardAvoidingView } from "react-native";
+import { Platform, KeyboardAvoidingView } from "react-native";
 import {
     NativeBaseProvider,
     Box,

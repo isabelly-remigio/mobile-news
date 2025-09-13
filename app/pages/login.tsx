@@ -4,7 +4,6 @@ import {
     NativeBaseProvider,
     Box,
     VStack,
-    Heading,
     Input,
     Button,
     Center,

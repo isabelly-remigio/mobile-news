@@ -7,15 +7,15 @@ import {
     Text,
     Avatar,
     ScrollView,
-    Image,
-    Button,
     Icon,
     Center,
     Pressable,
     extendTheme,
-    StatusBar
+
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
+import Footer from "../components/footer"
+import CardNews from '../components/cardNews';
 
 // Tema customizado
 const theme = extendTheme({
@@ -66,13 +66,12 @@ const Home = () => {
     const categories = [
         { icon: 'newspaper-outline', label: 'Notícias' },
         { icon: 'trending-up', label: 'Negócios' },
-        { icon: 'flask-outline', label: 'Ciência' },
+        { icon: 'laptop-outline', label: 'Tecnologia' },
         { icon: 'american-football-outline', label: 'Esportes' }
     ];
 
     return (
         <NativeBaseProvider theme={theme}>
-            <StatusBar backgroundColor="blue.500" barStyle="light-content" />
 
             <Box flex={1} bg="blue.500" safeArea>
 
@@ -101,7 +100,7 @@ const Home = () => {
                             </Text>
                         </Center>
                     </Box>
-                    {/* Card Branco Sobreposto */}
+                    {/* o card branco*/}
                     <Box
                         bg="white"
                         roundedTop="3xl"
@@ -109,7 +108,7 @@ const Home = () => {
                         mt={-2}
                         minH="full"
                     >
-                        {/* Menu de Categorias */}
+                        {/* categoruias */}
                         <Box px={5} py={6}>
                             <HStack justifyContent="space-between" alignItems="center">
                                 {categories.map((category, index) => (
@@ -141,162 +140,34 @@ const Home = () => {
                             </HStack>
                         </Box>
 
-                        {/* Seção de Notícias */}
+                        {/* noticias */}
                         <Box px={5} py={2}>
                             <Text fontSize="xl" fontWeight="bold" color="gray.800" mb={5}>
                                 Últimas Notícias
                             </Text>
-
+                                {/* card das noticias */}
                             <VStack space={5}>
                                 {newsData.map((news) => (
-                                    <Box key={news.id} bg="white" rounded="2xl" shadow={3} overflow="hidden">
-                                        {/* Imagem */}
-                                        <Image
-                                            source={{ uri: news.image }}
-                                            alt={news.title}
-                                            w="full"
-                                            h={48}
-                                            resizeMode="cover"
-                                        />
-
-                                        {/* Conteúdo do Card */}
-                                        <VStack p={5} space={3}>
-                                            {/* Título */}
-                                            <Text fontSize="lg" fontWeight="bold" color="gray.800" lineHeight="sm">
-                                                {news.title}
-                                            </Text>
-
-                                            {/* Autores */}
-                                            <Text fontSize="sm" color="blue.600" fontWeight="semibold">
-                                                {news.authors}
-                                            </Text>
-
-                                            {/* Descrição */}
-                                            <Text fontSize="sm" color="gray.600" lineHeight="sm">
-                                                {news.description}
-                                            </Text>
-
-                                            {/* Botão e Interações */}
-                                            <HStack justifyContent="space-between" alignItems="center" mt={3}>
-                                                <HStack space={5} alignItems="center">
-                                                    <Pressable>
-                                                        {({ isPressed }) => (
-                                                            <HStack alignItems="center" space={1} opacity={isPressed ? 0.7 : 1}>
-                                                                <Icon as={Ionicons} name="heart-outline" size="sm" color="gray.500" />
-                                                                <Text fontSize="xs" color="gray.500" fontWeight="medium">{news.likes}</Text>
-                                                            </HStack>
-                                                        )}
-                                                    </Pressable>
-
-                                                    <Pressable>
-                                                        {({ isPressed }) => (
-                                                            <HStack alignItems="center" space={1} opacity={isPressed ? 0.7 : 1}>
-                                                                <Icon as={Ionicons} name="chatbubble-outline" size="sm" color="gray.500" />
-                                                                <Text fontSize="xs" color="gray.500" fontWeight="medium">{news.comments}</Text>
-                                                            </HStack>
-                                                        )}
-                                                    </Pressable>
-
-                                                    <Pressable>
-                                                        {({ isPressed }) => (
-                                                            <HStack alignItems="center" space={1} opacity={isPressed ? 0.7 : 1}>
-                                                                <Icon as={Ionicons} name="share-outline" size="sm" color="gray.500" />
-                                                                <Text fontSize="xs" color="gray.500" fontWeight="medium">{news.shares}</Text>
-                                                            </HStack>
-                                                        )}
-                                                    </Pressable>
-                                                </HStack>
-
-                                                <Button size="sm" bg="blue.500" rounded="lg" shadow={2}>
-                                                    <Text fontSize="xs" color="white" fontWeight="semibold">
-                                                        Ler mais
-                                                    </Text>
-                                                </Button>
-                                            </HStack>
-                                        </VStack>
-                                    </Box>
+                                    <CardNews
+                                        key={news.id}
+                                        image={news.image}
+                                        title={news.title}
+                                        authors={news.authors}
+                                        description={news.description}
+                                        likes={news.likes}
+                                        comments={news.comments}
+                                        shares={news.shares}
+                                    />
                                 ))}
                             </VStack>
 
-                            {/* Espaço extra no final */}
+
                             <Box h={20} />
                         </Box>
                     </Box>
                 </ScrollView>
-
-                {/* Bottom Navigation */}
-                <Box bg="white" safeAreaBottom shadow={6}>
-                    <HStack bg="white" alignItems="center">
-                        <HStack flex={1} alignItems="center">
-                            {/* Home - Destacado */}
-                            <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon
-                                            as={Ionicons}
-                                            name="home"
-                                            size="md"
-                                            color="blue.500"
-                                        />
-                                        <Text fontSize="xs" color="blue.500" fontWeight="semibold" mt={1}>
-                                            Home
-                                        </Text>
-                                    </Center>
-                                )}
-                            </Pressable>
-
-                            {/* Pesquisa */}
-                            <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon
-                                            as={Ionicons}
-                                            name="search-outline"
-                                            size="md"
-                                            color="gray.400"
-                                        />
-                                        <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
-                                            Pesquisa
-                                        </Text>
-                                    </Center>
-                                )}
-                            </Pressable>
-
-                            {/* Favoritos */}
-                            <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon
-                                            as={Ionicons}
-                                            name="heart-outline"
-                                            size="md"
-                                            color="gray.400"
-                                        />
-                                        <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
-                                            Favoritos
-                                        </Text>
-                                    </Center>
-                                )}
-                            </Pressable>
-
-                            <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon
-                                            as={Ionicons}
-                                            name="person-outline"
-                                            size="md"
-                                            color="gray.400"
-                                        />
-                                        <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
-                                            Perfil
-                                        </Text>
-                                    </Center>
-                                )}
-                            </Pressable>
-                        </HStack>
-                    </HStack>
-                </Box>
+                
+                <Footer/>
             </Box>
         </NativeBaseProvider>
     );
