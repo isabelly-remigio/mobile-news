@@ -1,4 +1,3 @@
-// components/BottomNavigation.tsx
 import React from "react";
 import { Box, HStack, Pressable, Center, Icon, Text } from "native-base";
 import { Ionicons } from "@expo/vector-icons";

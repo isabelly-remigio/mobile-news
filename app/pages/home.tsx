@@ -20,15 +20,12 @@ import CardNews from "../components/cardNews";
 const theme = extendTheme({
   colors: {
     primary: {
-      50: "#eff6ff",
-      500: "#3b82f6",
       700: "#3A74C0",
     },
   },
 });
 
 const Home = () => {
-  //dados fakes
   const newsData = [
     {
       id: 1,
