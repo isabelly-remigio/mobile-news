@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { router } from 'expo-router';
 import {
   NativeBaseProvider,
   Box,
@@ -19,13 +20,13 @@ import Footer from '../components/footer';
 const theme = extendTheme({
   colors: {
     primary: {
-      600: '#0369A1',
+      800: '#0369A1',
     },
   },
 });
 
-const NewsDetailScreen = () => {
-  const [isFavorited, setIsFavorited] = useState(false);
+const DetalhesNoticias = () => {
+  const [favorito, setFavorito] = useState(false);
 
   // Dados mockados da notícia
   const newsData = {
@@ -38,22 +39,24 @@ const NewsDetailScreen = () => {
   };
 
   const handleFavoriteToggle = () => {
-    setIsFavorited(!isFavorited);
+    setFavorito(!favorito);
   };
 
   return (
     <NativeBaseProvider theme={theme}>
-      
+
       <Box flex={1} bg="white" safeArea>
         <HStack justifyContent="flex-start" alignItems="center" px={4} py={3}>
           <Pressable>
             {({ isPressed }) => (
-              <Icon 
-                as={Ionicons} 
-                name="chevron-back-outline" 
-                size="lg" 
+              <Icon
+                as={Ionicons}
+                name="chevron-back-outline"
+                size="lg"
                 color="blue.500"
                 opacity={isPressed ? 0.7 : 1}
+                onPress={() => router.push("/pages/home")}
+
               />
             )}
           </Pressable>
@@ -61,30 +64,30 @@ const NewsDetailScreen = () => {
 
         <ScrollView flex={1} showsVerticalScrollIndicator={false}>
           <Box px={4} mb={4} position="relative">
-            <Image 
-              source={{ uri: newsData.image }} 
+            <Image
+              source={{ uri: newsData.image }}
               alt={newsData.title}
-              w="full" 
+              w="full"
               h={64}
               rounded="md"
               resizeMode="cover"
             />
-            
+
             <Box position="absolute" bottom={3} right={7}>
               <Pressable onPress={handleFavoriteToggle}>
                 {({ isPressed }) => (
-                  <Box 
-                    bg="white" 
-                    rounded="full" 
-                    p={2} 
+                  <Box
+                    bg="white"
+                    rounded="full"
+                    p={2}
                     shadow={3}
                     opacity={isPressed ? 0.8 : 1}
                   >
-                    <Icon 
-                      as={Ionicons} 
-                      name={isFavorited ? "heart" : "heart-outline"}
-                      size="md" 
-                      color={isFavorited ? "red.500" : "gray.400"}
+                    <Icon
+                      as={Ionicons}
+                      name={favorito ? "heart" : "heart-outline"}
+                      size="md"
+                      color={favorito ? "red.500" : "gray.400"}
                     />
                   </Box>
                 )}
@@ -94,10 +97,10 @@ const NewsDetailScreen = () => {
 
           <VStack px={4} space={4}>
             <Box alignSelf="flex-start">
-              <Badge 
-                bg="primary.600" 
-                px={3} 
-                py={1} 
+              <Badge
+                bg="primary.800"
+                px={3}
+                py={1}
                 _text={{ color: "white", fontWeight: "bold", fontSize: "xs" }}
               >
                 {newsData.category}
@@ -116,14 +119,14 @@ const NewsDetailScreen = () => {
               <Text fontSize="md" fontWeight="bold" color="gray.800">
                 DESCRIÇÃO
               </Text>
-              
+
               <Text fontSize="sm" color="gray.600" lineHeight="md">
                 {newsData.description}
               </Text>
             </VStack>
 
             <Box mt={8} mb={6}>
-              <Button 
+              <Button
                 variant="outline"
                 borderColor="info.700"
                 borderWidth={2}
@@ -141,10 +144,10 @@ const NewsDetailScreen = () => {
           </VStack>
         </ScrollView>
 
-     <Footer/>
+        <Footer />
       </Box>
     </NativeBaseProvider>
   );
 };
 
-export default NewsDetailScreen;
+export default DetalhesNoticias;

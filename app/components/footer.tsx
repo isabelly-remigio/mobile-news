@@ -13,7 +13,13 @@ function Footer() {
           <Pressable flex={1} alignItems="center" py={3}>
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
-                <Icon as={Ionicons} name="home" size="md" color="blue.500" />
+                <Icon as={Ionicons}
+                  name="home"
+                  size="md"
+                  color="blue.500"
+                  onPress={() => router.push("/pages/home")}
+
+                />
                 <Text
                   fontSize="xs"
                   color="blue.500"
@@ -52,6 +58,8 @@ function Footer() {
                   name="heart-outline"
                   size="md"
                   color="gray.400"
+                  onPress={() => router.push("/pages/favoritos")}
+
                 />
                 <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
                   Favoritos

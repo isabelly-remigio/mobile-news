@@ -29,15 +29,13 @@ const Home = () => {
   const newsData = [
     {
       id: 1,
-      image:
-        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=200&fit=crop",
-      title: "Tecnologia revoluciona o mercado brasileiro",
-      authors: "João Silva, Maria Santos",
-      description:
-        "Novas startups brasileiras estão mudando o cenário tecnológico nacional com inovações disruptivas.",
-      likes: 42,
-      comments: 18,
-      shares: 7,
+      image: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=400&h=300&fit=crop',
+      title: 'Garmin watches\' exploding prices and popularity go hand-in-hand, for better or worse',
+     authors: 'por michael.hicks@futurenet.com (Michael L Hicks), Michael L Hicks',
+      description: 'I break down why Garmin raising prices has somehow led to greater sales, and whether people are overpaying for their Garmin watches.'
+      // likes: 42,
+      // comments: 18,
+      // shares: 7,
     },
     {
       id: 2,
@@ -47,9 +45,9 @@ const Home = () => {
       authors: "Carlos Oliveira",
       description:
         "Dados do último trimestre mostram recuperação acima do esperado em diversos setores.",
-      likes: 89,
-      comments: 34,
-      shares: 23,
+      // likes: 89,
+      // comments: 34,
+      // shares: 23,
     },
     {
       id: 3,
@@ -59,9 +57,9 @@ const Home = () => {
       authors: "Ana Costa, Pedro Lima",
       description:
         "Práticas sustentáveis se tornam prioridade para produtores rurais em todo o país.",
-      likes: 156,
-      comments: 67,
-      shares: 45,
+      // likes: 156,
+      // comments: 67,
+      // shares: 45,
     },
   ];
 
@@ -84,7 +82,7 @@ const Home = () => {
                   uri: "https://images.unsplash.com/photo-1603415526960-f7e0328c63b1?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
                 }}
               >
-                TE
+                RB
               </Avatar>
               <VStack flex={1}>
                 <Text fontSize="md" fontWeight="semibold" color="white">
@@ -160,9 +158,9 @@ const Home = () => {
                     title={news.title}
                     authors={news.authors}
                     description={news.description}
-                    likes={news.likes}
-                    comments={news.comments}
-                    shares={news.shares}
+                    // likes={news.likes}
+                    // comments={news.comments}
+                    // shares={news.shares}
                   />
                 ))}
               </VStack>
