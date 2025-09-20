@@ -146,8 +146,8 @@ const Favoritos = () => {
   return (
     <NativeBaseProvider theme={theme}>
 
-      <Box flex={1} bg="primary.700" safeArea>
-        <Box bg="primary.700" px={5} py={4}>
+      <Box flex={1} bg="white" safeArea>
+        <Box bg="primary.700" px={5} py={5}>
           <HStack alignItems="center" justifyContent="space-between">
             <Box flex={1}>
               <Pressable >

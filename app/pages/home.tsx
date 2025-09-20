@@ -72,8 +72,8 @@ const Home = () => {
 
   return (
     <NativeBaseProvider theme={theme}>
-      <Box flex={1} bg="blue.500" safeArea>
-        <ScrollView flex={1} showsVerticalScrollIndicator={false} bg="blue.500">
+      <Box flex={1} bg="white" safeArea>
+        <ScrollView flex={1} showsVerticalScrollIndicator={false} bg="primary.700">
           <Box bg="primary.700" px={5} py={4}>
             <HStack alignItems="center" space={3}>
               <Avatar
@@ -106,7 +106,12 @@ const Home = () => {
             </Center>
           </Box>
 
-          <Box bg="white" roundedTop="3xl" shadow={4} mt={-2} minH="full">
+          <Box 
+          bg="white" 
+          roundedTop="3xl" 
+          shadow={4} 
+          mt={-2} 
+          minH="full">
             {/* categoruias */}
             <Box px={5} py={6}>
               <HStack justifyContent="space-between" alignItems="center">
@@ -170,8 +175,9 @@ const Home = () => {
           </Box>
         </ScrollView>
 
-        <Footer />
+        
       </Box>
+      <Footer/>
     </NativeBaseProvider>
   );
 };
