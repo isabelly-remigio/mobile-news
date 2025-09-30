@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FlatList, Alert } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -13,11 +13,13 @@ import {
     Center,
     Pressable,
     extendTheme,
-    AlertDialog
+    AlertDialog,
+    Spinner
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Interfaces TypeScript
+
 interface Noticia {
     id: number;
     imagem: string;
@@ -34,77 +36,248 @@ const theme = extendTheme({
     },
 });
 
+
+
+const API_BASE_URL = 'http://localhost:3000/api';
+
 const TelaAdmin = () => {
     const [mostrarAlertaExcluir, setMostrarAlertaExcluir] = useState(false);
     const [noticiaParaExcluir, setNoticiaParaExcluir] = useState<Noticia | null>(null);
+    const [listaNoticias, setListaNoticias] = useState<Noticia[]>([]);
+    const [carregando, setCarregando] = useState(true);
+    const [excluindo, setExcluindo] = useState(false);
+    const [token, setToken] = useState<string | null>(null);
+    const [verificandoAuth, setVerificandoAuth] = useState(true);
 
-    // Referência para botão "Cancelar" (obrigatório no AlertDialog)
     const cancelarRef = useRef(null);
 
-    // Lista de notícias mockada
-    const [listaNoticias, setListaNoticias] = useState<Noticia[]>([
-        {
-            id: 1,
-            imagem: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=200&h=150&fit=crop',
-            titulo: 'Tecnologia revoluciona o mercado brasileiro',
-            autores: 'João Silva, Maria Santos',
-        },
-        {
-            id: 2,
-            imagem: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=200&h=150&fit=crop',
-            titulo: 'Economia em crescimento surpreende analistas',
-            autores: 'Carlos Oliveira',
-        },
-        {
-            id: 3,
-            imagem: 'https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?w=200&h=150&fit=crop',
-            titulo: 'Sustentabilidade ganha força no agronegócio',
-            autores: 'Ana Costa, Pedro Lima',
-        },
-        {
-            id: 4,
-            imagem: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=200&h=150&fit=crop',
-            titulo: 'Garmin watches exploding prices and popularity',
-            autores: 'Michael L Hicks',
+
+    useEffect(() => {
+        verificarAutenticacao();
+    }, []);
+
+    const verificarTempoSessao = async () => {
+        try {
+            const loginTime = await AsyncStorage.getItem('loginTime');
+
+            if (!loginTime) {
+                await AsyncStorage.removeItem('userToken');
+                return false;
+            }
+
+            const tempoLogin = parseInt(loginTime);
+            const tempoAtual = Date.now();
+            const diferenca = tempoAtual - tempoLogin;
+            const umaHora = 3600000; // CORREÇÃO: 1 hora = 3600000 ms
+
+            if (diferenca > umaHora) {
+                await AsyncStorage.removeItem('userToken');
+                await AsyncStorage.removeItem('loginTime');
+                Alert.alert(
+                    "Sessão Expirada",
+                    "Sua sessão durou 1 hora por segurança. Faça login novamente."
+                );
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Erro ao verificar sessão:', error);
+            return false;
         }
-    ]);
+    };
+
+// Verificar autenticação e buscar notícias
+
+    const verificarAutenticacao = async () => {
+        try {
+            setVerificandoAuth(true);
+
+            const sessaoValida = await verificarTempoSessao();
+            if (!sessaoValida) {
+                router.replace('/pages/login');
+                return;
+            }
+
+            const userToken = await AsyncStorage.getItem('userToken');
+
+            if (!userToken) {
+                Alert.alert('Acesso Negado', 'Você precisa fazer login para acessar esta página.');
+                router.replace('/pages/login');
+                return;
+            }
+
+            setToken(userToken);
+            await buscarNoticias(userToken);
+
+        } catch (error) {
+            console.error('Erro ao verificar autenticação:', error);
+            router.replace('/pages/login');
+        } finally {
+            setVerificandoAuth(false);
+        }
+    };
+
+// Auto logout após 1 hora
+
+    useEffect(() => {
+        if (!token) return;
+
+        const logoutTimer = setTimeout(() => {
+            Alert.alert(
+                "Sessão Expirada",
+                "Sua sessão expirou por segurança. Faça login novamente.",
+                [
+                    {
+                        text: "OK",
+                        onPress: async () => {
+                            // CORREÇÃO: usar removeItem individual
+                            await AsyncStorage.removeItem('userToken');
+                            await AsyncStorage.removeItem('loginTime');
+                            setToken(null);
+                            router.replace('/pages/login');
+                        }
+                    }
+                ]
+            );
+        }, 3600000);
+
+        return () => clearTimeout(logoutTimer);
+    }, [token]);
+
+// Função para obter headers com token
+
+    const getAuthHeaders = (authToken?: string) => {
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+
+        const currentToken = authToken || token;
+        if (currentToken) {
+            headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+
+        return headers;
+    };
+
+
+    const buscarNoticias = async (authToken?: string) => {
+        try {
+            setCarregando(true);
+            const response = await fetch(`${API_BASE_URL}/noticias`, {
+                headers: getAuthHeaders(authToken)
+            });
+
+            if (response.status === 401) {
+
+                await AsyncStorage.removeItem('userToken');
+                await AsyncStorage.removeItem('loginTime');
+                setToken(null);
+                Alert.alert('Sessão Expirada', 'Por favor, faça login novamente.');
+                router.replace('/pages/login');
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+            }
+
+            const noticias = await response.json();
+            setListaNoticias(noticias);
+        } catch (error) {
+            console.error('Erro ao buscar notícias:', error);
+            if (!error.message.includes('401')) {
+                Alert.alert('Erro', 'Não foi possível carregar as notícias. Verifique a conexão com o servidor.');
+            }
+        } finally {
+            setCarregando(false);
+        }
+    };
+
+// PUT - Editar notícia (navegar para tela de edição)
 
     const editarNoticia = (id: number) => {
         console.log(`Editar notícia ${id}`);
+        router.push(`/pages/admin/editarNews?id=${id}`);
     };
 
     const confirmarExclusao = (item: Noticia) => {
+        if (!token) {
+            Alert.alert('Erro', 'Você precisa estar autenticado para excluir notícias.');
+            return;
+        }
         setNoticiaParaExcluir(item);
         setMostrarAlertaExcluir(true);
     };
 
-    const excluirNoticia = () => {
-        if (noticiaParaExcluir) {
+
+    const excluirNoticia = async () => {
+        if (!noticiaParaExcluir || !token) return;
+
+        try {
+            setExcluindo(true);
+            const response = await fetch(`${API_BASE_URL}/noticias/${noticiaParaExcluir.id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+
+
+                await AsyncStorage.removeItem('userToken');
+                await AsyncStorage.removeItem('loginTime');
+                setToken(null);
+                setMostrarAlertaExcluir(false);
+                Alert.alert('Sessão Expirada', 'Por favor, faça login novamente.');
+                router.replace('/pages/login');
+                return;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || `Erro ${response.status}: ${response.statusText}`);
+            }
+
             setListaNoticias(listaNoticias.filter(item => item.id !== noticiaParaExcluir.id));
+            Alert.alert('Sucesso', 'Notícia excluída com sucesso!');
+        } catch (error) {
+            console.error('Erro ao excluir notícia:', error);
+            Alert.alert('Erro', error instanceof Error ? error.message : 'Não foi possível excluir a notícia. Tente novamente.');
+        } finally {
+            setExcluindo(false);
             setMostrarAlertaExcluir(false);
             setNoticiaParaExcluir(null);
         }
     };
 
+    // POST - Adicionar nova notícia
     const adicionarNoticia = () => {
-        console.log('Adicionar nova notícia');
+        if (!token) {
+            Alert.alert('Erro', 'Você precisa estar autenticado para adicionar notícias.');
+            return;
+        }
+        router.push("/pages/admin/cadastroNews");
     };
 
-    const sairSistema = () => {
-        Alert.alert(
-            "Sair",
-            "Tem certeza que deseja sair da administração?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                { text: "Sair", onPress: () => console.log("Logout") }
-            ]
-        );
+const sairSistema = async () => {
+  try {
+    await AsyncStorage.multiRemove(['userToken', 'loginTime', 'userData']);
+    setToken(null);
+    router.replace('/pages/login'); // redireciona imediatamente
+  } catch (error) {
+    console.error('Erro no logout:', error);
+    router.replace('/pages/login');
+  }
+};
+
+
+    const handleImageError = (item: Noticia) => {
+        console.log(`Erro ao carregar imagem da notícia ${item.id}`);
     };
 
     const renderizarNoticia = ({ item }: { item: Noticia }) => (
         <Box bg="white" rounded="xl" shadow={2} mb={3} overflow="hidden">
             <HStack space={3} p={3}>
-                {/* Imagem */}
                 <Image
                     source={{ uri: item.imagem }}
                     alt={item.titulo}
@@ -112,9 +285,10 @@ const TelaAdmin = () => {
                     h={16}
                     rounded="lg"
                     resizeMode="cover"
+                    fallbackSource={{ uri: 'https://via.placeholder.com/80x60?text=Imagem' }}
+                    onError={() => handleImageError(item)}
                 />
 
-                {/* Conteúdo */}
                 <VStack flex={1} space={1}>
                     <Text fontSize="md" fontWeight="semibold" color="gray.800" numberOfLines={2}>
                         {item.titulo}
@@ -124,9 +298,7 @@ const TelaAdmin = () => {
                     </Text>
                 </VStack>
 
-                {/* Botões de Ação */}
                 <VStack space={2}>
-                    {/* Botão Editar */}
                     <Pressable onPress={() => editarNoticia(item.id)}>
                         {({ isPressed }) => (
                             <Box
@@ -145,8 +317,9 @@ const TelaAdmin = () => {
                         )}
                     </Pressable>
 
-                    {/* Botão Excluir */}
-                    <Pressable onPress={() => confirmarExclusao(item)}>
+                    <Pressable onPress={() => 
+                        
+                        confirmarExclusao(item)}>
                         {({ isPressed }) => (
                             <Box
                                 bg="red.50"
@@ -168,42 +341,107 @@ const TelaAdmin = () => {
         </Box>
     );
 
+    if (verificandoAuth) {
+        return (
+            <NativeBaseProvider theme={theme}>
+                <Box flex={1} bg="primary.700" safeArea>
+                    <Center flex={1}>
+                        <VStack space={4} alignItems="center">
+                            <Spinner size="lg" color="white" />
+                            <Text color="white">Verificando autenticação...</Text>
+                        </VStack>
+                    </Center>
+                </Box>
+            </NativeBaseProvider>
+        );
+    }
+
+    if (!token) {
+        return (
+            <NativeBaseProvider theme={theme}>
+                <Box flex={1} bg="primary.700" safeArea>
+                    <Center flex={1} px={5}>
+                        <VStack space={4} alignItems="center">
+                            <Icon as={Ionicons} name="log-out-outline" size="4xl" color="white" />
+                            <Text color="white" fontSize="lg" textAlign="center">
+                                Acesso não autorizado
+                            </Text>
+                            <Button onPress={() => router.replace('/pages/login')} mt={4}>
+                                Ir para Login
+                            </Button>
+                        </VStack>
+                    </Center>
+                </Box>
+            </NativeBaseProvider>
+        );
+    }
+
     return (
         <NativeBaseProvider theme={theme}>
             <Box flex={1} bg="primary.700" safeArea>
-                {/* Header Azul */}
+
                 <Box bg="primary.700" px={5} py={6}>
-                    <HStack alignItems="center" justifyContent="center">
-                        {/* Título no centro */}
+                    <HStack alignItems="center" justifyContent="space-between">
+
+                        <Pressable onPress={() => buscarNoticias()} hitSlop={10}>
+                            <Icon as={Ionicons} name="refresh-outline" size="lg" color="white" />
+                        </Pressable>
+
                         <Text fontSize="xl" fontWeight="bold" color="white">
                             Administração
                         </Text>
+
+                        <Pressable onPress={sairSistema} hitSlop={10}>
+                            <Icon as={Ionicons} name="log-out-outline" size="lg" color="white" />
+                        </Pressable>
                     </HStack>
                 </Box>
 
-                {/* Card Branco Sobreposto */}
-                <Box
-                    flex={1}
-                    bg="gray.50"
-                    roundedTop="3xl"
-                    shadow={4}
-                    mt={-2}
-                >
+                {/* Resto do código permanece igual */}
+                <Box flex={1} bg="gray.50" roundedTop="3xl" shadow={4} mt={-2}>
                     <VStack flex={1} px={5} py={6} space={4}>
-                        {/* Lista de Notícias */}
                         <VStack flex={1} space={2}>
-                            <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                                Notícias Cadastradas
-                            </Text>
+                            <HStack justifyContent="space-between" alignItems="center">
+                                <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                                    Notícias Cadastradas
+                                </Text>
+                                <Text fontSize="sm" color="gray.500">
+                                    {listaNoticias.length} itens
+                                </Text>
+                            </HStack>
 
                             <Box flex={1}>
-                                <FlatList
-                                    data={listaNoticias}
-                                    renderItem={renderizarNoticia}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    showsVerticalScrollIndicator={false}
-                                    contentContainerStyle={{ paddingBottom: 20 }}
-                                />
+                                {carregando ? (
+                                    <Center flex={1}>
+                                        <VStack space={4} alignItems="center">
+                                            <Spinner size="lg" color="primary.700" />
+                                            <Text color="gray.600">Carregando notícias...</Text>
+                                        </VStack>
+                                    </Center>
+                                ) : (
+                                    <FlatList
+                                        data={listaNoticias}
+                                        renderItem={renderizarNoticia}
+                                        keyExtractor={(item) => item.id.toString()}
+                                        showsVerticalScrollIndicator={false}
+                                        contentContainerStyle={{
+                                            paddingBottom: 20,
+                                            flexGrow: listaNoticias.length === 0 ? 1 : 0
+                                        }}
+                                        ListEmptyComponent={() => (
+                                            <Center flex={1} py={10}>
+                                                <VStack space={3} alignItems="center">
+                                                    <Icon as={Ionicons} name="newspaper-outline" size="4xl" color="gray.400" />
+                                                    <Text color="gray.500" textAlign="center">
+                                                        Nenhuma notícia cadastrada
+                                                    </Text>
+                                                </VStack>
+                                            </Center>
+                                        )}
+                                        refreshing={carregando}
+                                        onRefresh={() => buscarNoticias()}
+                                    />
+                                )}
                             </Box>
                         </VStack>
                     </VStack>
@@ -213,66 +451,34 @@ const TelaAdmin = () => {
                 <Box bg="white" safeAreaBottom shadow={6}>
                     <HStack bg="white" alignItems="center">
                         <HStack flex={1} alignItems="center" justifyContent="space-around">
-
-                            {/* Admin */}
                             <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon as={Ionicons} name="settings" size="md" color="blue.500" />
-                                        <Text fontSize="xs" color="blue.500" mt={1} fontWeight="semibold">
-                                            Admin
-                                        </Text>
-                                    </Center>
-                                )}
+                                <Center>
+                                    <Icon as={Ionicons} name="settings" size="md" color="blue.500" />
+                                    <Text fontSize="xs" color="blue.500" mt={1} fontWeight="semibold">
+                                        Admin
+                                    </Text>
+                                </Center>
                             </Pressable>
-                            {/* Botão Adicionar Notícia (Grande no centro) */}
-                            <Pressable
-                                onPress={adicionarNoticia}
-                                alignItems="center"
-                                py={2}
-                                mx={2}
-                            >
-                                {({ isPressed }) => (
-                                    <Center
-                                        bg="orange.500"
-                                        w={16}
-                                        h={16}
-                                        rounded="full"
-                                        shadow={3}
-                                        opacity={isPressed ? 0.8 : 1}
-                                        mt={-8}
-                                    >
-                                        <Icon
-                                            as={Ionicons}
-                                            name="add"
-                                            size="2xl"
-                                            color="white"
-                                            onPress={() => router.push("/pages/admin/cadastroNews")}
-
-                                        />
-                                    </Center>
-                                )}
+                            
+                            <Pressable onPress={adicionarNoticia} alignItems="center" py={2} mx={2}>
+                                <Center bg="orange.500" w={16} h={16} rounded="full" shadow={3} mt={-8}>
+                                    <Icon as={Ionicons} name="add" size="2xl" color="white" />
+                                </Center>
                             </Pressable>
 
-                            {/* Perfil */}
                             <Pressable flex={1} alignItems="center" py={3}>
-                                {({ isPressed }) => (
-                                    <Center opacity={isPressed ? 0.7 : 1}>
-                                        <Icon as={Ionicons} name="person-outline" size="md" color="gray.400" />
-                                        <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
-                                            Perfil
-                                        </Text>
-                                    </Center>
-                                )}
+                                <Center>
+                                    <Icon as={Ionicons} name="person-outline" size="md" color="gray.400" />
+                                    <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
+                                        Perfil
+                                    </Text>
+                                </Center>
                             </Pressable>
                         </HStack>
                     </HStack>
                 </Box>
-
-
             </Box>
 
-            {/* Modal de Confirmação de Exclusão */}
             <AlertDialog
                 isOpen={mostrarAlertaExcluir}
                 onClose={() => setMostrarAlertaExcluir(false)}
@@ -282,8 +488,7 @@ const TelaAdmin = () => {
                     <AlertDialog.CloseButton />
                     <AlertDialog.Header>Excluir Notícia</AlertDialog.Header>
                     <AlertDialog.Body>
-                        Tem certeza que deseja excluir a notícia "{noticiaParaExcluir?.titulo}"?
-                        Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir a notícia "{noticiaParaExcluir?.titulo}"? Esta ação não pode ser desfeita.
                     </AlertDialog.Body>
                     <AlertDialog.Footer>
                         <Button.Group space={2}>
