@@ -1,24 +1,60 @@
 import React from "react";
 import { Box, HStack, Pressable, Center, Icon, Text } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useRouter } from "expo-router";
+import { router } from "expo-router";
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function Footer() {
+  const [usuarioLogado, setUsuarioLogado] = React.useState(false);
+
+  // Verificar se usuário está logado
+  React.useEffect(() => {
+    verificarLogin();
+  }, []);
+
+  const verificarLogin = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      setUsuarioLogado(!!token);
+    } catch (error) {
+      console.error('Erro ao verificar login:', error);
+    }
+  };
+
+  const handlePerfilPress = () => {
+    if (usuarioLogado) {
+      router.push("/pages/perfil");
+    } else {
+      router.push("/pages/login");
+    }
+  };
+
+  const handleFavoritosPress = () => {
+    if (usuarioLogado) {
+      router.push("/pages/favoritos");
+    } else {
+      router.push("/pages/login");
+    }
+  };
+
   return (
     <Box bg="white" safeAreaBottom shadow={6}>
       <HStack bg="white" alignItems="center">
         <HStack flex={1} alignItems="center">
           {/* Home */}
-          <Pressable flex={1} alignItems="center" py={3}>
+          <Pressable 
+            flex={1} 
+            alignItems="center" 
+            py={3}
+            onPress={() => router.push("/pages/home")}
+          >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon as={Ionicons}
                   name="home"
                   size="md"
                   color="blue.500"
-                  onPress={() => router.push("/pages/home")}
-
                 />
                 <Text
                   fontSize="xs"
@@ -32,7 +68,7 @@ function Footer() {
             )}
           </Pressable>
 
-          {/* pesquisa */}
+          {/* Pesquisa */}
           <Pressable flex={1} alignItems="center" py={3}>
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
@@ -49,19 +85,27 @@ function Footer() {
             )}
           </Pressable>
 
-          {/* favoritos */}
-          <Pressable flex={1} alignItems="center" py={3}>
+          {/* Favoritos */}
+          <Pressable 
+            flex={1} 
+            alignItems="center" 
+            py={3}
+            onPress={handleFavoritosPress}
+          >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
                   as={Ionicons}
                   name="heart-outline"
                   size="md"
-                  color="gray.400"
-                  onPress={() => router.push("/pages/favoritos")}
-
+                  color={usuarioLogado ? "red.500" : "gray.400"}
                 />
-                <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
+                <Text 
+                  fontSize="xs" 
+                  color={usuarioLogado ? "red.500" : "gray.400"} 
+                  mt={1} 
+                  fontWeight="medium"
+                >
                   Favoritos
                 </Text>
               </Center>
@@ -73,17 +117,22 @@ function Footer() {
             flex={1}
             alignItems="center"
             py={3}
-            onPress={() => router.push("/pages/login")}
+            onPress={handlePerfilPress}
           >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
                   as={Ionicons}
-                  name="person-outline"
+                  name={usuarioLogado ? "person" : "person-outline"}
                   size="md"
-                  color="gray.400"
+                  color={usuarioLogado ? "green.500" : "gray.400"}
                 />
-                <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
+                <Text 
+                  fontSize="xs" 
+                  color={usuarioLogado ? "green.500" : "gray.400"} 
+                  mt={1} 
+                  fontWeight="medium"
+                >
                   Perfil
                 </Text>
               </Center>
@@ -94,4 +143,5 @@ function Footer() {
     </Box>
   );
 }
+
 export default Footer;

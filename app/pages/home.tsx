@@ -13,11 +13,13 @@ import {
   extendTheme,
   Spinner,
   Button,
+  Alert,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import Footer from "../components/footer";
 import CardNews from "../components/cardNews";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from "expo-router";
 
 // Tema customizado
 const theme = extendTheme({
@@ -56,9 +58,9 @@ const Home = () => {
   const [carregandoNoticias, setCarregandoNoticias] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
 
   const API_BASE_URL = 'http://localhost:3000/api';
-
 
   const categories = [
     { icon: "newspaper-outline", label: "Notícias", value: "Notícias" },
@@ -67,24 +69,26 @@ const Home = () => {
     { icon: "american-football-outline", label: "Esportes", value: "Esportes" },
   ];
 
-
+  // Buscar dados do usuário e notícias
   useEffect(() => {
-    buscarDadosUsuario();
+    verificarTipoUsuario();
     buscarNoticias();
   }, []);
 
-
+  // Atualizar notícias filtradas quando categoria ou noticias mudarem
   useEffect(() => {
     filtrarNoticias();
   }, [categoriaSelecionada, noticias]);
 
-  // Buscar dados do usuário
-  const buscarDadosUsuario = async () => {
+  // VERIFICAÇÃO CRÍTICA: Bloquear acesso de Admin à Home
+  const verificarTipoUsuario = async () => {
     try {
+      setCarregando(true);
       const token = await AsyncStorage.getItem('userToken');
       
       if (!token) {
-        setErro('Usuário não autenticado');
+        // Sem token = usuário não logado, pode ver Home normalmente
+        setUsuarioLogado(false);
         setCarregando(false);
         return;
       }
@@ -98,28 +102,48 @@ const Home = () => {
       });
 
       if (resposta.status === 401) {
+        // Token inválido, limpar e considerar como não logado
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('loginTime');
-        setErro('Sessão expirada. Faça login novamente.');
+        setUsuarioLogado(false);
         setCarregando(false);
         return;
       }
 
       if (!resposta.ok) {
-        throw new Error('Erro ao buscar dados do usuário');
+        throw new Error('Erro ao verificar usuário');
       }
 
       const dadosUsuario = await resposta.json();
+      
+      // VERIFICAÇÃO CRÍTICA: Se for Admin, redireciona para área Admin e faz logout
+      if (dadosUsuario.isAdmin) {
+        console.log('Admin tentando acessar Home - redirecionando para Admin');
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('loginTime');
+        await AsyncStorage.removeItem('userData');
+        
+        Alert.alert(
+          'Acesso Restrito', 
+          'Administradores devem acessar a área administrativa',
+          [{ text: 'OK', onPress: () => router.replace('/pages/admin/admin') }]
+        );
+        return;
+      }
+
+      // Se chegou aqui, é usuário normal válido
       setUsuario(dadosUsuario);
+      setUsuarioLogado(true);
       
     } catch (error) {
-      console.error('Erro ao buscar usuário:', error);
-      setErro('Erro ao carregar dados do usuário');
+      console.error('Erro ao verificar usuário:', error);
+      setUsuarioLogado(false);
     } finally {
       setCarregando(false);
     }
   };
 
+  // Buscar notícias da API
   const buscarNoticias = async () => {
     try {
       setCarregandoNoticias(true);
@@ -147,7 +171,7 @@ const Home = () => {
     }
   };
 
-
+  // Filtrar notícias por categoria
   const filtrarNoticias = () => {
     if (!categoriaSelecionada) {
       setNoticiasFiltradas(noticias);
@@ -161,7 +185,7 @@ const Home = () => {
 
   // Função para lidar com categoria selecionada
   const handleCategoriaPress = (categoria: string) => {
-
+    // Se clicar na mesma categoria, deseleciona
     if (categoriaSelecionada === categoria) {
       setCategoriaSelecionada(null);
     } else {
@@ -174,15 +198,16 @@ const Home = () => {
     setErro(null);
     setCategoriaSelecionada(null);
     buscarNoticias();
-    buscarDadosUsuario();
+    verificarTipoUsuario();
   };
 
-  
+  const fazerLogin = () => {
+    router.push("/pages/login");
+  };
+
+  // Gerar cor aleatória para o avatar baseada na inicial
   const gerarCorAvatar = (letra: string) => {
-    const cores = [
-      "red.500", "orange.500", "yellow.500", "green.500", 
-      "teal.500", "blue.500", "cyan.500", "purple.500", "pink.500"
-    ];
+    const cores = ["red.500", "orange.500", "green.500", "teal.500", "blue.500", "purple.500"];
     const index = letra.charCodeAt(0) % cores.length;
     return cores[index];
   };
@@ -210,40 +235,59 @@ const Home = () => {
           {/* Header */}
           <Box bg="primary.700" px={5} py={4}>
             <HStack alignItems="center" space={3}>
+              {/* Avatar - Mostra inicial se logado, ícone genérico se não */}
+              {usuarioLogado ? (
+                <Avatar
+                  bg={usuario ? gerarCorAvatar(usuario.nome.charAt(0)) : "gray.500"}
+                  size="md"
+                >
+                  <Text fontSize="lg" fontWeight="bold" color="white">
+                    {usuario ? usuario.nome.charAt(0).toUpperCase() : 'U'}
+                  </Text>
+                </Avatar>
+              ) : (
+                <Pressable onPress={fazerLogin}>
+                  <Avatar
+                    bg="gray.400"
+                    size="md"
+                  >
+                    <Icon as={Ionicons} name="person-outline" size="sm" color="white" />
+                  </Avatar>
+                </Pressable>
+              )}
 
-              <Avatar
-                bg={usuario ? gerarCorAvatar(usuario.nome.charAt(0)) : "gray.500"}
-                size="md"
-              >
-                <Text fontSize="lg" fontWeight="bold" color="white">
-                  {usuario ? usuario.nome.charAt(0).toUpperCase() : 'U'}
-                </Text>
-              </Avatar>
               <VStack flex={1}>
                 <Text fontSize="md" fontWeight="semibold" color="white">
-                  {usuario ? `Olá, ${usuario.nome}!` : 'Olá, Usuário!'}
+                  {usuarioLogado
+                    ? (usuario ? `Olá, ${usuario.nome}!` : 'Olá, Usuário!')
+                    : 'Bem-vindo ao NewsApp!'
+                  }
                 </Text>
                 <Text fontSize="sm" color="blue.100">
-                  Bem-vindo de volta
+                  {usuarioLogado ? 'Bem-vindo de volta' : 'Faça login para salvar favoritos'}
                 </Text>
               </VStack>
-              
+
+              {/* Botão Login/Perfil */}
+              {!usuarioLogado && (
+                <Pressable onPress={fazerLogin}>
+                  <Center bg="white" px={3} py={1} rounded="full">
+                    <Text fontSize="sm" color="primary.700" fontWeight="bold">
+                      Login
+                    </Text>
+                  </Center>
+                </Pressable>
+              )}
             </HStack>
 
             <Center mt={4}>
-              <Text
-                fontSize="lg"
-                fontWeight="bold"
-                color="white"
-                textAlign="center"
-              >
+              <Text fontSize="lg" fontWeight="bold" color="white" textAlign="center">
                 Fique por dentro das principais notícias
               </Text>
             </Center>
           </Box>
 
           <Box bg="white" roundedTop="3xl" shadow={4} mt={-2} minH="full">
-           
             {/* Categorias */}
             <Box px={5} py={6}>
               <HStack justifyContent="space-between" alignItems="center">
@@ -309,11 +353,30 @@ const Home = () => {
 
             {/* Notícias */}
             <Box px={5} py={2}>
-
               <Text fontSize="xl" fontWeight="bold" color="gray.800" mb={5}>
                 Últimas Notícias
               </Text>
 
+              {/* Mensagem de convite para login */}
+              {!usuarioLogado && (
+                <Center bg="blue.50" p={4} rounded="lg" mb={4}>
+                  <HStack space={3} alignItems="center">
+                    <Icon as={Ionicons} name="information-circle" size="sm" color="blue.600" />
+                    <VStack flex={1}>
+                      <Text fontSize="sm" color="blue.800" fontWeight="medium">
+                        Faça login para salvar suas notícias favoritas
+                      </Text>
+                    </VStack>
+                    <Pressable onPress={fazerLogin}>
+                      <Text fontSize="sm" color="blue.600" fontWeight="bold">
+                        Login
+                      </Text>
+                    </Pressable>
+                  </HStack>
+                </Center>
+              )}
+
+              {/* Mensagem de Erro */}
               {erro && (
                 <Center py={8}>
                   <VStack space={3} alignItems="center">
@@ -332,6 +395,7 @@ const Home = () => {
                 </Center>
               )}
 
+              {/* Loading Notícias */}
               {carregandoNoticias && !erro && (
                 <Center py={8}>
                   <VStack space={3} alignItems="center">
@@ -341,6 +405,7 @@ const Home = () => {
                 </Center>
               )}
 
+              {/* Lista de Notícias */}
               {!carregandoNoticias && !erro && (
                 <VStack space={5}>
                   {noticiasFiltradas.length > 0 ? (
@@ -379,7 +444,7 @@ const Home = () => {
           </Box>
         </ScrollView>
       </Box>
-      <Footer/>
+      <Footer />
     </NativeBaseProvider>
   );
 };

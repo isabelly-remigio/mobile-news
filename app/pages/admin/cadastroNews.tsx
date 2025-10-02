@@ -23,7 +23,6 @@ import {
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // ADICIONAR IMPORT
-import Cadastro from '../cadastro';
 
 // Tema customizado
 const theme = extendTheme({

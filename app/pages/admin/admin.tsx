@@ -56,67 +56,57 @@ const TelaAdmin = () => {
         verificarAutenticacao();
     }, []);
 
-    const verificarTempoSessao = async () => {
-        try {
-            const loginTime = await AsyncStorage.getItem('loginTime');
-
-            if (!loginTime) {
-                await AsyncStorage.removeItem('userToken');
-                return false;
-            }
-
-            const tempoLogin = parseInt(loginTime);
-            const tempoAtual = Date.now();
-            const diferenca = tempoAtual - tempoLogin;
-            const umaHora = 3600000; // CORREÇÃO: 1 hora = 3600000 ms
-
-            if (diferenca > umaHora) {
-                await AsyncStorage.removeItem('userToken');
-                await AsyncStorage.removeItem('loginTime');
-                Alert.alert(
-                    "Sessão Expirada",
-                    "Sua sessão durou 1 hora por segurança. Faça login novamente."
-                );
-                return false;
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Erro ao verificar sessão:', error);
-            return false;
-        }
-    };
-
-// Verificar autenticação e buscar notícias
-
-    const verificarAutenticacao = async () => {
-        try {
-            setVerificandoAuth(true);
-
-            const sessaoValida = await verificarTempoSessao();
-            if (!sessaoValida) {
-                router.replace('/pages/login');
-                return;
-            }
-
-            const userToken = await AsyncStorage.getItem('userToken');
-
-            if (!userToken) {
-                Alert.alert('Acesso Negado', 'Você precisa fazer login para acessar esta página.');
-                router.replace('/pages/login');
-                return;
-            }
-
-            setToken(userToken);
-            await buscarNoticias(userToken);
-
-        } catch (error) {
-            console.error('Erro ao verificar autenticação:', error);
+const verificarAutenticacao = async () => {
+    try {
+        setVerificandoAuth(true);
+        const userToken = await AsyncStorage.getItem('userToken');
+        
+        if (!userToken) {
+            Alert.alert('Acesso Negado', 'Você precisa fazer login como administrador.');
             router.replace('/pages/login');
-        } finally {
-            setVerificandoAuth(false);
+            return;
         }
-    };
+
+        const resposta = await fetch(`${API_BASE_URL}/usuarios/perfil`, {
+            headers: {
+                'Authorization': `Bearer ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (resposta.status === 401) {
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('loginTime');
+            Alert.alert('Sessão Expirada', 'Faça login novamente.');
+            router.replace('/pages/login');
+            return;
+        }
+
+        if (!resposta.ok) throw new Error('Erro ao verificar autenticação');
+
+        const dadosUsuario = await resposta.json();
+        
+        // VERIFICAÇÃO CRÍTICA: Se NÃO for Admin, redireciona para Home
+        if (!dadosUsuario.isAdmin) {
+            console.log('Usuário normal tentando acessar Admin - redirecionando para Home');
+            await AsyncStorage.removeItem('userToken'); // Força logout
+            await AsyncStorage.removeItem('loginTime');
+            Alert.alert('Acesso Negado', 'Apenas administradores podem acessar esta área');
+            router.replace('/pages/home');
+            return;
+        }
+
+        // Se chegou aqui, é Admin válido
+        setToken(userToken);
+        await buscarNoticias(userToken);
+        
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        router.replace('/pages/login');
+    } finally {
+        setVerificandoAuth(false);
+    }
+};
 
 // Auto logout após 1 hora
 
@@ -140,7 +130,7 @@ const TelaAdmin = () => {
                     }
                 ]
             );
-        }, 3600000);
+        }, 360000);
 
         return () => clearTimeout(logoutTimer);
     }, [token]);

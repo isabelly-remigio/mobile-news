@@ -1,18 +1,8 @@
 import React, { useState } from "react";
 import { Platform, KeyboardAvoidingView, Alert } from "react-native";
 import {
-  NativeBaseProvider,
-  Box,
-  VStack,
-  Input,
-  Button,
-  Center,
-  Link,
-  Text,
-  Icon,
-  Pressable,
-  Checkbox,
-  Image,
+  NativeBaseProvider, Box, VStack, Input, Button, Center, Link, Text,
+  Icon, Pressable, Checkbox, Image,
 } from "native-base";
 
 import logo from "../../assets/images/logo.png";
@@ -26,6 +16,7 @@ export default function LoginScreen() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
+  // No LoginScreen - função fazerLogin
   const fazerLogin = async () => {
     if (!email || !senha) {
       Alert.alert("Erro", "Por favor, preencha todos os campos");
@@ -49,33 +40,32 @@ export default function LoginScreen() {
       const dados = await resposta.json();
 
       if (resposta.ok) {
-
+        // Login bem-sucedido - SALVAR O TOKEN!
         console.log('Login realizado com sucesso:', dados);
 
+        // SALVAR TOKEN NO ASYNCSTORAGE
         if (dados.token) {
           await AsyncStorage.setItem('userToken', dados.token);
-
-
-
           await AsyncStorage.setItem('loginTime', Date.now().toString());
-          console.log('Token e timestamp salvos com sucesso');
+          console.log('Token salvo com sucesso');
         } else {
           console.log('Token não veio na resposta:', dados);
         }
 
-
+        // Salvar informações do usuário se necessário
         if (dados.usuario) {
           await AsyncStorage.setItem('userData', JSON.stringify(dados.usuario));
         }
 
         Alert.alert("Sucesso", "Login realizado com sucesso!");
 
-// Redirecionar com base na role do usuário
-
+        // CORREÇÃO: Redirecionar baseado se é admin ou não
         if (dados.usuario.isAdmin) {
-          router.replace('/pages/admin/admin');
+          console.log('Redirecionando para ADMIN');
+          router.replace('/pages/admin/admin'); // Tela específica do Admin
         } else {
-          router.replace('/pages/home');
+          console.log('Redirecionando para HOME (usuário normal)');
+          router.replace('/pages/home'); // Tela do usuário normal
         }
       } else {
         Alert.alert("Erro", dados.error || "Erro ao fazer login");
