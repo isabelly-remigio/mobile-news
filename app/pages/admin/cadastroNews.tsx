@@ -22,7 +22,7 @@ import {
     Center
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ADICIONAR IMPORT
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Tema customizado
 const theme = extendTheme({
@@ -57,7 +57,7 @@ const CadastroNews = () => {
     const [carregando, setCarregando] = useState(false);
     const [carregandoImagem, setCarregandoImagem] = useState(false);
     const [token, setToken] = useState<string | null>(null);
-    const [verificandoAuth, setVerificandoAuth] = useState(true); // NOVO ESTADO
+    const [verificandoAuth, setVerificandoAuth] = useState(true);
 
     // Categorias disponíveis
     const categorias = [
@@ -67,17 +67,14 @@ const CadastroNews = () => {
         'Esportes',
     ];
 
-    // NOVO: Verificar autenticação ao carregar a tela
     useEffect(() => {
         verificarAutenticacao();
     }, []);
 
-    // NOVO: Função para verificar autenticação
     const verificarAutenticacao = async () => {
         try {
             setVerificandoAuth(true);
             
-            // Verificar tempo da sessão (igual na tela admin)
             const loginTime = await AsyncStorage.getItem('loginTime');
             if (!loginTime) {
                 await AsyncStorage.removeItem('userToken');
@@ -98,7 +95,6 @@ const CadastroNews = () => {
                 return;
             }
 
-            // Buscar token
             const userToken = await AsyncStorage.getItem('userToken');
             if (!userToken) {
                 Alert.alert('Acesso Negado', 'Você precisa fazer login para acessar esta página.');
@@ -148,7 +144,6 @@ const CadastroNews = () => {
     const salvarNoticia = async () => {
         if (!validarFormulario()) return;
 
-        // NOVO: Verificar se tem token
         if (!token) {
             Alert.alert('Erro', 'Token de autenticação não encontrado. Faça login novamente.');
             router.replace('/pages/login');
@@ -174,7 +169,6 @@ const CadastroNews = () => {
                 })
             });
 
-            // NOVO: Verificar se token expirou
             if (resposta.status === 401) {
                 await AsyncStorage.removeItem('userToken');
                 await AsyncStorage.removeItem('loginTime');
@@ -190,7 +184,7 @@ const CadastroNews = () => {
                 Alert.alert('Sucesso', 'Notícia salva com sucesso!', [
                     { 
                         text: 'OK', 
-                        onPress: () => router.back() 
+                        onPress: () => router.replace('/pages/admin/admin')
                     }
                 ]);
             } else {
@@ -204,14 +198,40 @@ const CadastroNews = () => {
         }
     };
 
+    // ✅ CORREÇÃO: Função cancelar corrigida
     const cancelarEdicao = () => {
-        Alert.alert('Cancelar', 'Tem certeza que deseja cancelar? Os dados não salvos serão perdidos.', [
-            { text: 'Continuar editando', style: 'cancel' },
-            { text: 'Cancelar', onPress: () => router.back() }
-        ]);
+        // Verifica se há dados não salvos
+        const hasUnsavedChanges = 
+            dadosFormulario.titulo.trim() !== '' ||
+            dadosFormulario.descricao.trim() !== '' ||
+            dadosFormulario.autor.trim() !== '' ||
+            dadosFormulario.categoria.trim() !== '' ||
+            dadosFormulario.imagemURL.trim() !== '' ||
+            dadosFormulario.link.trim() !== '';
+
+        if (hasUnsavedChanges) {
+            Alert.alert(
+                'Cancelar', 
+                'Tem certeza que deseja cancelar? Os dados não salvos serão perdidos.', 
+                [
+                    { text: 'Continuar editando', style: 'cancel' },
+                    { 
+                        text: 'Cancelar', 
+                        onPress: () => router.replace('/pages/admin/admin')
+                    }
+                ]
+            );
+        } else {
+            // Se não há dados, vai direto para admin
+            router.replace('/pages/admin/admin');
+        }
     };
 
-//: Enquanto verifica autenticação
+    // ✅ CORREÇÃO: Função para voltar para admin (seta do header)
+    const voltarParaAdmin = () => {
+        cancelarEdicao(); // Reutiliza a mesma lógica
+    };
+
     if (verificandoAuth) {
         return (
             <NativeBaseProvider theme={theme}>
@@ -253,29 +273,29 @@ const CadastroNews = () => {
     return (
         <NativeBaseProvider theme={theme}>
             <Box flex={1} bg="primary.700" safeArea>
-
-
+                {/* Header com título centralizado e seta voltando para admin */}
                 <Box bg="primary.700" px={5} py={5}>
                     <HStack alignItems="center" justifyContent="space-between">
-                        <Pressable onPress={cancelarEdicao} hitSlop={10}>
+                        <Pressable onPress={voltarParaAdmin} hitSlop={10}>
                             <Icon as={Ionicons} name="chevron-back-outline" size="lg" color="white" />
                         </Pressable>
-                        <Text fontSize="lg" fontWeight="bold" color="white">
-                            Cadastrar Notícia
-                        </Text>
-                        <Pressable onPress={salvarNoticia} hitSlop={10}>
-                            <Icon as={Ionicons} name="checkmark-outline" size="lg" color="white" />
-                        </Pressable>
+                        
+                        {/* Título centralizado */}
+                        <Box flex={1} alignItems="center">
+                            <Text fontSize="lg" fontWeight="bold" color="white">
+                                Cadastrar Notícia
+                            </Text>
+                        </Box>
+                        
+                        {/* Espaço vazio para balancear o layout */}
+                        <Box w={6} />
                     </HStack>
                 </Box>
-
 
                 <Box flex={1} bg="gray.50" roundedTop="3xl" shadow={4} mt={-2}>
                     <ScrollView flex={1} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
                         <Box bg="white" mx={5} my={6} rounded="xl" shadow={2} p={5}>
                             <VStack space={5}>
-
-
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">Título da notícia *</Text>
                                     <Input
@@ -402,6 +422,7 @@ const CadastroNews = () => {
                                 <Text fontSize="md" color="white" fontWeight="bold">Salvar Notícia</Text>
                             </Button>
 
+                            {/* ✅ CORREÇÃO: Botão Cancelar funcionando */}
                             <Button
                                 variant="outline"
                                 borderColor="blue.500"

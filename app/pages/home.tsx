@@ -268,7 +268,6 @@ const Home = () => {
                 </Text>
               </VStack>
 
-              {/* Botão Login/Perfil */}
               {!usuarioLogado && (
                 <Pressable onPress={fazerLogin}>
                   <Center bg="white" px={3} py={1} rounded="full">
@@ -357,7 +356,6 @@ const Home = () => {
                 Últimas Notícias
               </Text>
 
-              {/* Mensagem de convite para login */}
               {!usuarioLogado && (
                 <Center bg="blue.50" p={4} rounded="lg" mb={4}>
                   <HStack space={3} alignItems="center">
@@ -376,7 +374,6 @@ const Home = () => {
                 </Center>
               )}
 
-              {/* Mensagem de Erro */}
               {erro && (
                 <Center py={8}>
                   <VStack space={3} alignItems="center">
@@ -395,7 +392,6 @@ const Home = () => {
                 </Center>
               )}
 
-              {/* Loading Notícias */}
               {carregandoNoticias && !erro && (
                 <Center py={8}>
                   <VStack space={3} alignItems="center">

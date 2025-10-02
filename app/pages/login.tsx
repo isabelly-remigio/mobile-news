@@ -52,20 +52,18 @@ export default function LoginScreen() {
           console.log('Token não veio na resposta:', dados);
         }
 
-        // Salvar informações do usuário se necessário
         if (dados.usuario) {
           await AsyncStorage.setItem('userData', JSON.stringify(dados.usuario));
         }
 
         Alert.alert("Sucesso", "Login realizado com sucesso!");
 
-        // CORREÇÃO: Redirecionar baseado se é admin ou não
         if (dados.usuario.isAdmin) {
           console.log('Redirecionando para ADMIN');
-          router.replace('/pages/admin/admin'); // Tela específica do Admin
+          router.replace('/pages/admin/admin'); 
         } else {
           console.log('Redirecionando para HOME (usuário normal)');
-          router.replace('/pages/home'); // Tela do usuário normal
+          router.replace('/pages/home'); 
         }
       } else {
         Alert.alert("Erro", dados.error || "Erro ao fazer login");

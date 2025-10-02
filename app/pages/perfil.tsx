@@ -19,7 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import Footer from '../components/footer';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';   
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const theme = extendTheme({
@@ -46,6 +46,7 @@ const PerfilUsuario = () => {
     const [modoEdicao, setModoEdicao] = useState(false);
 
     const toast = useToast();
+    const router = useRouter();   
     const API_BASE_URL = 'http://localhost:3000/api';
 
     useEffect(() => {
@@ -103,7 +104,6 @@ const PerfilUsuario = () => {
     };
 
     const salvarAlteracoes = async () => {
-        // Validações
         if (!nome.trim()) {
             mostrarToast('Erro', 'O nome é obrigatório', 'error');
             return;
@@ -134,7 +134,6 @@ const PerfilUsuario = () => {
                 email: email.trim().toLowerCase(),
             };
 
-            // Incluir senha apenas se foi preenchida
             if (senha.trim()) {
                 dadosAtualizacao.senha = senha;
             }
@@ -160,7 +159,6 @@ const PerfilUsuario = () => {
                 throw new Error(erro.error || 'Erro ao salvar alterações');
             }
 
-            // Sucesso
             await resposta.json();
             mostrarToast('Sucesso', 'Perfil atualizado com sucesso!', 'success');
             setModoEdicao(false);
@@ -184,7 +182,7 @@ const PerfilUsuario = () => {
             console.error('Erro ao limpar sessão:', error);
         }
     };
-
+//tem que refazer
     const fazerLogout = async () => {
         Alert.alert(
             "Sair da Conta",
@@ -197,11 +195,10 @@ const PerfilUsuario = () => {
                         try {
                             await limparSessao();
                             console.log('Logout realizado com sucesso');
-                            // CORREÇÃO: Usar navigate em vez de replace para garantir a navegação
-                            router.navigate('/pages/home');
+                            router.replace('/pages/home');  
                         } catch (error) {
                             console.error('Erro no logout:', error);
-                            router.navigate('/pages/home');
+                            router.replace('/pages/home');
                         }
                     }
                 }
@@ -210,12 +207,10 @@ const PerfilUsuario = () => {
     };
 
     const voltarParaHome = () => {
-        // CORREÇÃO: Navegação mais direta para home
-        router.navigate('/pages/home');
+        router.navigate('/pages/home');  
     };
 
     const cancelarEdicao = () => {
-        // Restaurar valores originais
         if (usuario) {
             setNome(usuario.nome);
             setEmail(usuario.email);
@@ -240,7 +235,6 @@ const PerfilUsuario = () => {
                         </VStack>
                     </Center>
                 </Box>
-                {/* REMOVIDO: Footer durante loading para evitar conflitos */}
             </NativeBaseProvider>
         );
     }
@@ -252,8 +246,11 @@ const PerfilUsuario = () => {
                     behavior={Platform.OS === "ios" ? "padding" : "height"} 
                     style={{ flex: 1 }}
                 >
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {/* Header - CORREÇÃO: Botão voltar navega para home */}
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ flexGrow: 1 }}
+                    >
+                        {/* Header */}
                         <Box bg="primary.700" px={5} py={5}>
                             <HStack alignItems="center" justifyContent="space-between">
                                 <Pressable onPress={voltarParaHome}>
@@ -268,8 +265,13 @@ const PerfilUsuario = () => {
                             </HStack>
                         </Box>
 
-                        {/* Conteúdo */}
-                        <Box bg="white" roundedTop="3xl" shadow={4} mt={-2}>
+                        <Box 
+                            bg="white" 
+                            roundedTop="3xl" 
+                            shadow={4} 
+                            mt={-2}
+                            flex={1} 
+                        >
                             <Box px={5} py={8} alignItems="center">
                                 <Avatar 
                                     bg={usuario ? gerarCorAvatar(usuario.nome.charAt(0)) : "gray.500"} 
@@ -295,7 +297,7 @@ const PerfilUsuario = () => {
 
                             <Box px={5} pb={8}>
                                 <VStack space={4}>
-                                    {/* Nome */}
+
                                     <VStack space={1}>
                                         <Text fontSize="sm" color="gray.600" fontWeight="medium">
                                             Nome
@@ -311,7 +313,6 @@ const PerfilUsuario = () => {
                                         />
                                     </VStack>
 
-                                    {/* Email */}
                                     <VStack space={1}>
                                         <Text fontSize="sm" color="gray.600" fontWeight="medium">
                                             Email
@@ -329,23 +330,22 @@ const PerfilUsuario = () => {
                                         />
                                     </VStack>
 
-                                    {/* Senha */}
-                                    <VStack space={1}>
-                                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                                            Senha {modoEdicao && '(opcional)'}
-                                        </Text>
-                                        <Input
-                                            value={senha}
-                                            onChangeText={setSenha}
-                                            bg="gray.50"
-                                            borderColor="gray.300"
-                                            h={12}
-                                            type={showSenha ? "text" : "password"}
-                                            placeholder={modoEdicao ? "Nova senha (mín. 6 caracteres)" : "••••••••"}
-                                            isDisabled={!modoEdicao || salvando}
-                                            _focus={{ borderColor: "primary.700", bg: "white" }}
-                                            InputRightElement={
-                                                modoEdicao && (
+                                    {modoEdicao && (
+                                        <VStack space={1}>
+                                            <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                                Nova Senha (opcional)
+                                            </Text>
+                                            <Input
+                                                value={senha}
+                                                onChangeText={setSenha}
+                                                bg="gray.50"
+                                                borderColor="gray.300"
+                                                h={12}
+                                                type={showSenha ? "text" : "password"}
+                                                placeholder="Nova senha (mín. 6 caracteres)"
+                                                isDisabled={salvando}
+                                                _focus={{ borderColor: "primary.700", bg: "white" }}
+                                                InputRightElement={
                                                     <Pressable onPress={() => setShowSenha(!showSenha)} mr={3}>
                                                         <Icon
                                                             as={Ionicons}
@@ -354,17 +354,14 @@ const PerfilUsuario = () => {
                                                             color="gray.500"
                                                         />
                                                     </Pressable>
-                                                )
-                                            }
-                                        />
-                                        {modoEdicao && (
+                                                }
+                                            />
                                             <Text fontSize="xs" color="gray.500" ml={1}>
                                                 Deixe em branco para manter a senha atual
                                             </Text>
-                                        )}
-                                    </VStack>
+                                        </VStack>
+                                    )}
 
-                                    {/* Botões */}
                                     {!modoEdicao ? (
                                         <Button 
                                             bg="primary.700" 
@@ -415,8 +412,8 @@ const PerfilUsuario = () => {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </Box>
-            {/* CORREÇÃO: Footer com navegação controlada */}
-            <Footer onHomePress={voltarParaHome} />
+            
+            <Footer />
         </NativeBaseProvider>
     );
 };
