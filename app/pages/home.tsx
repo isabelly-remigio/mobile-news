@@ -85,7 +85,7 @@ const Home = () => {
     try {
       setCarregando(true);
       const token = await AsyncStorage.getItem('userToken');
-      
+
       if (!token) {
         // Sem token = usuário não logado, pode ver Home normalmente
         setUsuarioLogado(false);
@@ -115,16 +115,16 @@ const Home = () => {
       }
 
       const dadosUsuario = await resposta.json();
-      
+
       // VERIFICAÇÃO CRÍTICA: Se for Admin, redireciona para área Admin e faz logout
       if (dadosUsuario.isAdmin) {
         console.log('Admin tentando acessar Home - redirecionando para Admin');
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('loginTime');
         await AsyncStorage.removeItem('userData');
-        
+
         Alert.alert(
-          'Acesso Restrito', 
+          'Acesso Restrito',
           'Administradores devem acessar a área administrativa',
           [{ text: 'OK', onPress: () => router.replace('/pages/admin/admin') }]
         );
@@ -134,7 +134,7 @@ const Home = () => {
       // Se chegou aqui, é usuário normal válido
       setUsuario(dadosUsuario);
       setUsuarioLogado(true);
-      
+
     } catch (error) {
       console.error('Erro ao verificar usuário:', error);
       setUsuarioLogado(false);
@@ -162,7 +162,7 @@ const Home = () => {
 
       const noticiasData = await resposta.json();
       setNoticias(noticiasData);
-      
+
     } catch (error) {
       console.error('Erro ao buscar notícias:', error);
       setErro('Não foi possível carregar as notícias. Verifique sua conexão.');
@@ -176,7 +176,7 @@ const Home = () => {
     if (!categoriaSelecionada) {
       setNoticiasFiltradas(noticias);
     } else {
-      const filtradas = noticias.filter(noticia => 
+      const filtradas = noticias.filter(noticia =>
         noticia.categoria === categoriaSelecionada
       );
       setNoticiasFiltradas(filtradas);
@@ -264,7 +264,7 @@ const Home = () => {
                   }
                 </Text>
                 <Text fontSize="sm" color="blue.100">
-                  {usuarioLogado ? 'Bem-vindo de volta' : 'Faça login para salvar favoritos'}
+                  {usuarioLogado ? 'Bem-vindo de volta' : 'Faça login '}
                 </Text>
               </VStack>
 
@@ -292,8 +292,8 @@ const Home = () => {
             <Box px={5} py={6}>
               <HStack justifyContent="space-between" alignItems="center">
                 {categories.map((category, index) => (
-                  <Pressable 
-                    key={index} 
+                  <Pressable
+                    key={index}
                     alignItems="center"
                     onPress={() => handleCategoriaPress(category.value)}
                   >
@@ -303,8 +303,8 @@ const Home = () => {
                           w={16}
                           h={16}
                           bg={
-                            categoriaSelecionada === category.value 
-                              ? "primary.700" 
+                            categoriaSelecionada === category.value
+                              ? "primary.700"
                               : "blue.100"
                           }
                           rounded="full"
@@ -312,8 +312,8 @@ const Home = () => {
                           shadow={2}
                           borderWidth={2}
                           borderColor={
-                            categoriaSelecionada === category.value 
-                              ? "primary.700" 
+                            categoriaSelecionada === category.value
+                              ? "primary.700"
                               : "transparent"
                           }
                         >
@@ -322,8 +322,8 @@ const Home = () => {
                             name={category.icon}
                             size="lg"
                             color={
-                              categoriaSelecionada === category.value 
-                                ? "white" 
+                              categoriaSelecionada === category.value
+                                ? "white"
                                 : "primary.700"
                             }
                           />
@@ -331,14 +331,14 @@ const Home = () => {
                         <Text
                           fontSize="xs"
                           color={
-                            categoriaSelecionada === category.value 
-                              ? "primary.700" 
+                            categoriaSelecionada === category.value
+                              ? "primary.700"
                               : "gray.600"
                           }
                           textAlign="center"
                           fontWeight={
-                            categoriaSelecionada === category.value 
-                              ? "bold" 
+                            categoriaSelecionada === category.value
+                              ? "bold"
                               : "medium"
                           }
                         >
@@ -384,8 +384,8 @@ const Home = () => {
                     <Text color="red.500" textAlign="center" fontSize="md">
                       {erro}
                     </Text>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onPress={recarregar}
                       leftIcon={<Icon as={Ionicons} name="refresh" />}
                     >
@@ -412,6 +412,7 @@ const Home = () => {
                     noticiasFiltradas.map((noticia) => (
                       <CardNews
                         key={noticia.id}
+                        id={noticia.id}
                         image={noticia.imagemURL}
                         title={noticia.titulo}
                         authors={noticia.autor}
@@ -426,8 +427,8 @@ const Home = () => {
                         <Text color="gray.500" textAlign="center" fontSize="md">
                           Nenhuma notícia disponível no momento
                         </Text>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onPress={recarregar}
                           leftIcon={<Icon as={Ionicons} name="refresh" />}
                         >
@@ -437,6 +438,7 @@ const Home = () => {
                     </Center>
                   )}
                 </VStack>
+
               )}
 
               <Box h={20} />

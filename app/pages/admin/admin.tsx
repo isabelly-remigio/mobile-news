@@ -1,21 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FlatList, Alert } from 'react-native';
 import { router } from 'expo-router';
-import {
-    NativeBaseProvider,
-    Box,
-    VStack,
-    HStack,
-    Text,
-    Image,
-    Button,
-    Icon,
-    Center,
-    Pressable,
-    extendTheme,
-    AlertDialog,
-    Spinner
-} from 'native-base';
+import { NativeBaseProvider, Box, VStack, HStack, Text, Image, Button,
+         Icon, Center, Pressable, extendTheme, AlertDialog, Spinner} from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -86,7 +73,8 @@ const verificarAutenticacao = async () => {
 
         const dadosUsuario = await resposta.json();
         
-        // VERIFICAÇÃO CRÍTICA: Se NÃO for Admin, redireciona para Home
+        
+
         if (!dadosUsuario.isAdmin) {
             console.log('Usuário normal tentando acessar Admin - redirecionando para Home');
             await AsyncStorage.removeItem('userToken'); // Força logout
@@ -121,7 +109,7 @@ const verificarAutenticacao = async () => {
                     {
                         text: "OK",
                         onPress: async () => {
-                            // CORREÇÃO: usar removeItem individual
+
                             await AsyncStorage.removeItem('userToken');
                             await AsyncStorage.removeItem('loginTime');
                             setToken(null);

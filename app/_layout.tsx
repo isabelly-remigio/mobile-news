@@ -1,4 +1,4 @@
-// App.tsx ou _layout.tsx (dependendo do Expo Router)
+// app/_layout.tsx
 import { Stack } from 'expo-router';
 
 export default function Layout() {
@@ -7,8 +7,6 @@ export default function Layout() {
       <Stack.Screen 
         name="index" 
         options={{ headerShown: false }} 
-        // Redireciona para home se acessar a raiz
-        redirect={true}
       />
       <Stack.Screen 
         name="pages/home" 
@@ -22,10 +20,24 @@ export default function Layout() {
         name="pages/cadastro" 
         options={{ headerShown: false }} 
       />
-
-      
+      <Stack.Screen 
+        name="pages/detalhesNoticias" 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="pages/favoritos" 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="pages/perfil" 
+        options={{ headerShown: false }} 
+      />
       <Stack.Screen 
         name="pages/admin/admin" 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="pages/admin/cadastroNews" 
         options={{ headerShown: false }} 
       />
     </Stack>

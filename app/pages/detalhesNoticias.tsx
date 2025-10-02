@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { router } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   NativeBaseProvider,
   Box,
@@ -13,9 +13,13 @@ import {
   Pressable,
   Badge,
   extendTheme,
+  useToast,
+  Spinner,
+  Center,
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import Footer from '../components/footer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const theme = extendTheme({
   colors: {
@@ -25,56 +29,273 @@ const theme = extendTheme({
   },
 });
 
+interface Noticia {
+  id: number;
+  titulo: string;
+  descricao: string;
+  conteudo: string;
+  imagem: string;
+  categoria: string;
+  autor: string;
+  dataPublicacao: string;
+}
+
 const DetalhesNoticias = () => {
   const [favorito, setFavorito] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [salvandoFavorito, setSalvandoFavorito] = useState(false);
+  const [noticia, setNoticia] = useState<Noticia | null>(null);
+  const [verificandoFavorito, setVerificandoFavorito] = useState(true);
+  const [erroImagem, setErroImagem] = useState(false);
+  
+  const toast = useToast();
+  const params = useLocalSearchParams();
+  
+  const idNoticia = params.id ? String(params.id) : null;
+  
+  const API_BASE_URL = 'http://localhost:3000/api';
 
-  // Dados mockados da notícia
-  const newsData = {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=400&h=300&fit=crop',
-    category: 'TECNOLOGIA',
-    title: 'Garmin watches\' exploding prices and popularity go hand-in-hand, for better or worse',
-    authors: 'por michael.hicks@futurenet.com (Michael L Hicks), Michael L Hicks',
-    description: 'I break down why Garmin raising prices has somehow led to greater sales, and whether people are overpaying for their Garmin watches.'
+  useEffect(() => {
+    if (idNoticia) {
+      carregarNoticia();
+      verificarFavorito();
+    } else {
+      setCarregando(false);
+      console.error('ID da notícia não fornecido');
+    }
+  }, [idNoticia]);
+
+  const mostrarToast = (titulo: string, descricao: string, status: "success" | "error" | "warning" | "info") => {
+    toast.show({
+      title: titulo,
+      description: descricao,
+      status: status,
+      duration: 3000,
+    });
   };
 
-  const handleFavoriteToggle = () => {
-    setFavorito(!favorito);
+  const carregarNoticia = async () => {
+    if (!idNoticia) {
+      mostrarToast('Erro', 'ID da notícia não encontrado', 'error');
+      return;
+    }
+
+    try {
+      setCarregando(true);
+      setErroImagem(false);
+      
+      const resposta = await fetch(`${API_BASE_URL}/noticias/${idNoticia}`);
+      
+      if (!resposta.ok) {
+        throw new Error(`Erro ${resposta.status}: ${resposta.statusText}`);
+      }
+      
+      const dadosNoticia = await resposta.json();
+      
+      const noticiaComFallback = {
+        ...dadosNoticia,
+        titulo: dadosNoticia.titulo || 'Título não disponível',
+        descricao: dadosNoticia.descricao || 'Descrição não disponível',
+        conteudo: dadosNoticia.conteudo || '',
+        imagem: dadosNoticia.imagem || dadosNoticia.imagemURL || '',
+        categoria: dadosNoticia.categoria || 'GERAL',
+        autor: dadosNoticia.autor || 'Autor não informado',
+        dataPublicacao: dadosNoticia.dataPublicacao || new Date().toISOString(),
+      };
+      
+      setNoticia(noticiaComFallback);
+    } catch (error) {
+      console.error('Erro ao carregar notícia:', error);
+      mostrarToast('Erro', 'Não foi possível carregar a notícia', 'error');
+      
+      const noticiaFallback: Noticia = {
+        id: idNoticia ? parseInt(idNoticia) : 0,
+        titulo: 'Notícia não encontrada',
+        descricao: 'A notícia solicitada não está disponível no momento.',
+        conteudo: 'Tente novamente mais tarde ou verifique se o ID está correto.',
+        imagem: '',
+        categoria: 'ERRO',
+        autor: 'Sistema',
+        dataPublicacao: new Date().toISOString(),
+      };
+      
+      setNoticia(noticiaFallback);
+    } finally {
+      setCarregando(false);
+    }
   };
+
+// Mude a URL base para as rotas de usuários
+const verificarFavorito = async () => {
+    if (!idNoticia) return;
+    
+    try {
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+            setVerificandoFavorito(false);
+            return;
+        }
+
+        // ✅ CORRETO: GET /usuarios/favoritos
+        const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (resposta.ok) {
+            const favoritos = await resposta.json();
+            const isFavorito = favoritos.some((fav: Noticia) => fav.id === parseInt(idNoticia));
+            setFavorito(isFavorito);
+        }
+    } catch (error) {
+        console.error('Erro ao verificar favorito:', error);
+    } finally {
+        setVerificandoFavorito(false);
+    }
+};
+
+const handleFavoriteToggle = async () => {
+    if (!idNoticia) {
+        mostrarToast('Erro', 'ID da notícia não encontrado', 'error');
+        return;
+    }
+
+    try {
+        const token = await AsyncStorage.getItem('userToken');
+        
+        if (!token) {
+            mostrarToast('Ação Necessária', 'Faça login para favoritar notícias', 'warning');
+            router.push('/pages/login');
+            return;
+        }
+
+        setSalvandoFavorito(true);
+
+        if (favorito) {
+            // ✅ CORRETO: DELETE /usuarios/favoritos/37
+            const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${idNoticia}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (resposta.ok) {
+                setFavorito(false);
+                mostrarToast('Sucesso', 'Notícia removida dos favoritos', 'success');
+            } else {
+                throw new Error('Erro ao remover dos favoritos');
+            }
+        } else {
+            // ✅ CORRETO: POST /usuarios/favoritos/37
+            const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${idNoticia}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (resposta.ok) {
+                setFavorito(true);
+                mostrarToast('Sucesso', 'Notícia adicionada aos favoritos', 'success');
+            } else {
+                const textoErro = await resposta.text();
+                console.error('Resposta do servidor:', textoErro);
+                throw new Error('Erro ao favoritar - ' + resposta.status);
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao favoritar:', error);
+        mostrarToast('Erro', error instanceof Error ? error.message : 'Erro ao processar favorito', 'error');
+    } finally {
+        setSalvandoFavorito(false);
+    }
+};
+  const handleErroImagem = () => {
+    setErroImagem(true);
+    console.log('Erro ao carregar imagem');
+  };
+
+  if (carregando) {
+    return (
+      <NativeBaseProvider theme={theme}>
+        <Box flex={1} bg="white" safeArea>
+          <Center flex={1}>
+            <VStack space={4} alignItems="center">
+              <Spinner size="lg" color="primary.800" />
+              <Text color="gray.600">Carregando notícia...</Text>
+            </VStack>
+          </Center>
+        </Box>
+      </NativeBaseProvider>
+    );
+  }
+
+  if (!noticia) {
+    return (
+      <NativeBaseProvider theme={theme}>
+        <Box flex={1} bg="white" safeArea>
+          <Center flex={1}>
+            <VStack space={4} alignItems="center">
+              <Icon as={Ionicons} name="alert-circle-outline" size="2xl" color="red.500" />
+              <Text color="gray.600">Notícia não encontrada</Text>
+              <Button onPress={() => router.back()} bg="primary.800">
+                <Text color="white">Voltar</Text>
+              </Button>
+            </VStack>
+          </Center>
+        </Box>
+      </NativeBaseProvider>
+    );
+  }
 
   return (
     <NativeBaseProvider theme={theme}>
-
       <Box flex={1} bg="white" safeArea>
+        {/* Header apenas com seta de voltar - CORREÇÃO */}
         <HStack justifyContent="flex-start" alignItems="center" px={4} py={3}>
-          <Pressable>
+          <Pressable onPress={() => router.back()}>
             {({ isPressed }) => (
-              <Icon
-                as={Ionicons}
-                name="chevron-back-outline"
-                size="lg"
-                color="blue.500"
+              <Icon 
+                as={Ionicons} 
+                name="chevron-back-outline" 
+                size="lg" 
+                color="blue.500" 
                 opacity={isPressed ? 0.7 : 1}
-                onPress={() => router.push("/pages/home")}
-
               />
             )}
           </Pressable>
         </HStack>
 
         <ScrollView flex={1} showsVerticalScrollIndicator={false}>
+          {/* Imagem com ícone de favorito em cima - CORREÇÃO */}
           <Box px={4} mb={4} position="relative">
-            <Image
-              source={{ uri: newsData.image }}
-              alt={newsData.title}
-              w="full"
-              h={64}
-              rounded="md"
-              resizeMode="cover"
-            />
+            {erroImagem || !noticia.imagem ? (
+              <Center w="full" h={64} bg="gray.200" rounded="md">
+                <VStack space={2} alignItems="center">
+                  <Icon as={Ionicons} name="image-outline" size="2xl" color="gray.400" />
+                  <Text color="gray.500" fontSize="sm">Imagem não disponível</Text>
+                </VStack>
+              </Center>
+            ) : (
+              <Image
+                source={{ uri: noticia.imagem }}
+                alt={noticia.titulo}
+                w="full"
+                h={64}
+                rounded="md"
+                resizeMode="cover"
+                onError={handleErroImagem}
+              />
+            )}
 
+            {/* Ícone de favorito em cima da imagem - CORREÇÃO */}
             <Box position="absolute" bottom={3} right={7}>
-              <Pressable onPress={handleFavoriteToggle}>
+              <Pressable 
+                onPress={handleFavoriteToggle} 
+                disabled={salvandoFavorito || verificandoFavorito}
+              >
                 {({ isPressed }) => (
                   <Box
                     bg="white"
@@ -83,12 +304,18 @@ const DetalhesNoticias = () => {
                     shadow={3}
                     opacity={isPressed ? 0.8 : 1}
                   >
-                    <Icon
-                      as={Ionicons}
-                      name={favorito ? "heart" : "heart-outline"}
-                      size="md"
-                      color={favorito ? "red.500" : "gray.400"}
-                    />
+                    {verificandoFavorito ? (
+                      <Spinner size="sm" color="gray.400" />
+                    ) : salvandoFavorito ? (
+                      <Spinner size="sm" color="red.500" />
+                    ) : (
+                      <Icon
+                        as={Ionicons}
+                        name={favorito ? "heart" : "heart-outline"}
+                        size="md"
+                        color={favorito ? "red.500" : "gray.400"}
+                      />
+                    )}
                   </Box>
                 )}
               </Pressable>
@@ -98,33 +325,44 @@ const DetalhesNoticias = () => {
           <VStack px={4} space={4}>
             <Box alignSelf="flex-start">
               <Badge
-                bg="primary.800"
+                bg={noticia.categoria === 'ERRO' ? 'red.500' : 'primary.800'}
                 px={3}
                 py={1}
                 _text={{ color: "white", fontWeight: "bold", fontSize: "xs" }}
               >
-                {newsData.category}
+                {noticia.categoria}
               </Badge>
             </Box>
 
             <Text fontSize="xl" fontWeight="bold" color="gray.800" lineHeight="lg">
-              {newsData.title}
+              {noticia.titulo}
             </Text>
 
             <Text fontSize="sm" color="gray.500" lineHeight="sm">
-              {newsData.authors}
+              {noticia.autor}
             </Text>
 
             <VStack space={3} mt={4}>
               <Text fontSize="md" fontWeight="bold" color="gray.800">
                 DESCRIÇÃO
               </Text>
-
               <Text fontSize="sm" color="gray.600" lineHeight="md">
-                {newsData.description}
+                {noticia.descricao}
               </Text>
             </VStack>
 
+            {noticia.conteudo && (
+              <VStack space={3} mt={4}>
+                <Text fontSize="md" fontWeight="bold" color="gray.800">
+                  CONTEÚDO COMPLETO
+                </Text>
+                <Text fontSize="sm" color="gray.600" lineHeight="md">
+                  {noticia.conteudo}
+                </Text>
+              </VStack>
+            )}
+
+            {/* Botão "Notícia Completa" - CORREÇÃO */}
             <Box mt={8} mb={6}>
               <Button
                 variant="outline"
@@ -133,6 +371,7 @@ const DetalhesNoticias = () => {
                 h={12}
                 rounded="lg"
                 _pressed={{ bg: "blue.50" }}
+                onPress={() => mostrarToast('Informação', 'Conteúdo completo da notícia', 'info')}
               >
                 <Text fontSize="md" color="primary.500" fontWeight="semibold">
                   Notícia Completa

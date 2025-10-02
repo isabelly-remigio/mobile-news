@@ -1,28 +1,13 @@
-import React, { useState } from 'react';
-import { FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { FlatList, Alert } from 'react-native';
 import { router } from 'expo-router';
-import {
-  NativeBaseProvider,
-  Box,
-  HStack,
-  Text,
-  Image,
-  Button,
-  Icon,
-  Center,
-  Pressable,
-  extendTheme,
-} from 'native-base';
+import { NativeBaseProvider, Box, HStack,Text,Button,Icon,Center,Pressable,
+         extendTheme,Spinner,useToast, VStack} from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import Footer from '../components/footer';
+import FavoriteCard, { FavoriteItem } from '../components/favoriteCard'; // ✅ Importando o componente
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface FavoriteItem {
-  id: number;
-  image: string;
-  title: string;
-}
-
-// Tema customizado
 const theme = extendTheme({
   colors: {
     primary: {
@@ -32,86 +17,130 @@ const theme = extendTheme({
 });
 
 const Favoritos = () => {
-  // Estado dos favoritos com tipo definido
-  const [favorito, setFavorito] = useState<FavoriteItem[]>([
+  const [favoritos, setFavoritos] = useState<FavoriteItem[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [removendo, setRemovendo] = useState<number | null>(null);
+  
+  const toast = useToast();
+  const API_BASE_URL = 'http://localhost:3000/api';
 
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=400&h=200&fit=crop',
-      title: 'Garmin watches exploding prices and popularity',
-    }
-  ]);
+  useEffect(() => {
+    carregarFavoritos();
+  }, []);
 
-  // Remover item dos favoritos com tipo definido
-  const removeFavorite = (id: number) => {
-    setFavorito(favorito.filter(item => item.id !== id));
+  const mostrarToast = (titulo: string, descricao: string, status: "success" | "error" | "warning" | "info") => {
+    toast.show({
+      title: titulo,
+      description: descricao,
+      status: status,
+      duration: 3000,
+    });
   };
 
+  const carregarFavoritos = async () => {
+    try {
+        setCarregando(true);
+        const token = await AsyncStorage.getItem('userToken');
+        
+        if (!token) {
+            mostrarToast('Ação Necessária', 'Faça login para ver seus favoritos', 'warning');
+            router.push('/pages/login');
+            return;
+        }
 
-  // Renderizar cada item do grid com tipo definido
+        const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+      
+      if (resposta.status === 401) {
+        await AsyncStorage.removeItem('userToken');
+        mostrarToast('Sessão Expirada', 'Faça login novamente', 'warning');
+        router.push('/pages/login');
+        return;
+      }
+
+      if (!resposta.ok) {
+        throw new Error('Erro ao carregar favoritos');
+      }
+
+      const dadosFavoritos = await resposta.json();
+      setFavoritos(dadosFavoritos);
+      
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error);
+      mostrarToast('Erro', 'Não foi possível carregar os favoritos', 'error');
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const removeFavorite = async (id: number) => {
+    try {
+        setRemovendo(id);
+        const token = await AsyncStorage.getItem('userToken');
+        
+        if (!token) {
+            mostrarToast('Erro', 'Sessão expirada', 'error');
+            return;
+        }
+
+        const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+      if (resposta.ok) {
+        setFavoritos(favoritos.filter(item => item.id !== id));
+        mostrarToast('Sucesso', 'Notícia removida dos favoritos', 'success');
+      } else {
+        throw new Error('Erro ao remover dos favoritos');
+      }
+    } catch (error) {
+      console.error('Erro ao remover favorito:', error);
+      mostrarToast('Erro', 'Erro ao remover dos favoritos', 'error');
+    } finally {
+      setRemovendo(null);
+    }
+  };
+
+  const confirmarRemocao = (id: number, titulo: string) => {
+    Alert.alert(
+      "Remover Favorito",
+      `Deseja remover "${titulo}" dos favoritos?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Remover", 
+          style: "destructive",
+          onPress: () => removeFavorite(id)
+        }
+      ]
+    );
+  };
+
+  const abrirDetalhesNoticia = (noticia: FavoriteItem) => {
+    router.push({
+      pathname: '/pages/detalhesNoticias',
+      params: { id: noticia.id.toString() }
+    });
+  };
+
+  // ✅ AGORA SIMPLES E LIMPO!
   const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
-    <Box flex={1} maxW="50%" p={2}>
-      <Pressable onPress={() => console.log(`Abrir notícia ${item.id}`)}>
-        {({ isPressed }) => (
-          <Box
-            bg="white"
-            rounded="xl"
-            shadow={2}
-            overflow="hidden"
-            opacity={isPressed ? 0.8 : 1}
-            position="relative"
-          >
-            {/* Imagem */}
-            <Image
-              source={{ uri: item.image }}
-              alt={item.title}
-              w="full"
-              h={32}
-              resizeMode="cover"
-            />
-
-            {/* Título */}
-            <Box p={3} pb={10}>
-              <Text
-                fontSize="sm"
-                fontWeight="medium"
-                color="gray.800"
-                numberOfLines={2}
-                lineHeight="sm"
-              >
-                {item.title}
-              </Text>
-            </Box>
-
-            <Box position="absolute" bottom={2} right={2}>
-              <Pressable onPress={() => removeFavorite(item.id)}>
-                {({ isPressed: heartPressed }) => (
-                  <Box
-                    bg="white"
-                    rounded="full"
-                    p={1}
-                    shadow={2}
-                    opacity={heartPressed ? 0.7 : 1}
-                  >
-                    <Icon
-                      as={Ionicons}
-                      name="heart"
-                      size="sm"
-                      color="red.500"
-                    />
-                  </Box>
-                )}
-              </Pressable>
-            </Box>
-          </Box>
-        )}
-      </Pressable>
-    </Box>
+    <FavoriteCard
+      item={item}
+      removendo={removendo}
+      onRemove={confirmarRemocao}
+      onPress={abrirDetalhesNoticia}
+    />
   );
 
-  // Estado vazio
   const EmptyState = () => (
-    <Center flex={1} px={8}>
+    <Center flex={1} px={8} py={20}>
       <Icon
         as={Ionicons}
         name="heart-outline"
@@ -123,34 +152,53 @@ const Favoritos = () => {
         fontSize="lg"
         color="gray.500"
         textAlign="center"
-        mb={6}
+        mb={2}
         lineHeight="md"
+        fontWeight="medium"
       >
-        Você ainda não salvou nenhuma notícia.
+        Nenhuma notícia favoritada
+      </Text>
+      <Text
+        fontSize="sm"
+        color="gray.400"
+        textAlign="center"
+        mb={6}
+      >
+        As notícias que você favoritar aparecerão aqui
       </Text>
       <Button
-        bg="blue.500"
+        bg="primary.700"
         rounded="lg"
         px={8}
-        _pressed={{ bg: "blue.600" }}
+        py={3}
+        _pressed={{ bg: "primary.800" }}
         onPress={() => router.push("/pages/home")}
-
+        shadow={2}
       >
         <Text fontSize="md" color="white" fontWeight="semibold">
-          Explorar notícias
+          Explorar Notícias
         </Text>
       </Button>
     </Center>
   );
 
+  const Loading = () => (
+    <Center flex={1}>
+      <VStack space={4} alignItems="center">
+        <Spinner size="lg" color="primary.700" />
+        <Text color="gray.600">Carregando favoritos...</Text>
+      </VStack>
+    </Center>
+  );
+
   return (
     <NativeBaseProvider theme={theme}>
-
       <Box flex={1} bg="white" safeArea>
+        {/* Header */}
         <Box bg="primary.700" px={5} py={5}>
           <HStack alignItems="center" justifyContent="space-between">
             <Box flex={1}>
-              <Pressable >
+              <Pressable onPress={() => router.back()}>
                 {({ isPressed }) => (
                   <Icon
                     as={Ionicons}
@@ -163,32 +211,33 @@ const Favoritos = () => {
               </Pressable>
             </Box>
 
-            {/* Título centralizado */}
             <Text fontSize="lg" fontWeight="bold" color="white">
-              Favoritos
+              Meus Favoritos
             </Text>
 
-            {/* Espaço vazio no lado direito para manter o balanceamento */}
             <Box flex={1} />
           </HStack>
         </Box>
 
-        {/* Card Branco Sobreposto */}
-        <Box
-          flex={1}
-          bg="white"
-          roundedTop="3xl"
-          shadow={4}
-          mt={-2}
-        >
-          {favorito.length === 0 ? (
+        {/* Conteúdo */}
+        <Box flex={1} bg="white" roundedTop="3xl" shadow={4} mt={-2}>
+          {carregando ? (
+            <Loading />
+          ) : favoritos.length === 0 ? (
             <EmptyState />
           ) : (
             <Box flex={1} px={2} py={4}>
+              {/* Contador de favoritos */}
+              <Box px={4} mb={3}>
+                <Text fontSize="sm" color="gray.500">
+                  {favoritos.length} {favoritos.length === 1 ? 'notícia favoritada' : 'notícias favoritadas'}
+                </Text>
+              </Box>
+              
               <FlatList
-                data={favorito}
+                data={favoritos}
                 renderItem={renderFavoriteItem}
-                keyExtractor={(item: FavoriteItem) => item.id.toString()}
+                keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 80 }}
