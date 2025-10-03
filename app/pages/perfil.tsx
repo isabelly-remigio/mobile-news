@@ -4,7 +4,7 @@ import {
     Button,Icon,Pressable,extendTheme,Spinner,Center,useToast,
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
-import { KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import Footer from '../components/footer';
 import { useRouter } from 'expo-router';   
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,6 +31,7 @@ const PerfilUsuario = () => {
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
     const [modoEdicao, setModoEdicao] = useState(false);
+    const [mostrarAlertaLogout, setMostrarAlertaLogout] = useState(false);
 
     const toast = useToast();
     const router = useRouter();   
@@ -162,41 +163,35 @@ const PerfilUsuario = () => {
 
     const limparSessao = async () => {
         try {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('loginTime');
-            await AsyncStorage.removeItem('userData');
-            console.log('Sessão limpa com sucesso');
+            await AsyncStorage.multiRemove(['userToken', 'loginTime', 'userData']);
         } catch (error) {
             console.error('Erro ao limpar sessão:', error);
         }
     };
 
-    const fazerLogout = async () => {
-        Alert.alert(
-            "Sair da Conta",
-            "Tem certeza que deseja sair?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                { 
-                    text: "Sair", 
-                    onPress: async () => {
-                        try {
-                            await limparSessao();
-                            console.log('Redirecionando para home após logout');
-                            // CORREÇÃO: Usar replace em vez de navigate
-                            router.replace('/pages/home');
-                        } catch (error) {
-                            console.error('Erro no logout:', error);
-                            router.replace('/pages/home');
-                        }
-                    }
-                }
-            ]
-        );
+    const fazerLogout = () => {
+        setMostrarAlertaLogout(true);
+    };
+
+    const confirmarLogout = async () => {
+        setMostrarAlertaLogout(false);
+        
+        try {
+            await limparSessao();
+            setTimeout(() => {
+                router.replace('/pages/home');
+            }, 100);
+        } catch (error) {
+            router.replace('/pages/home');
+        }
+    };
+
+    const cancelarLogout = () => {
+        setMostrarAlertaLogout(false);
     };
 
     const voltarParaHome = () => {
-        router.replace('/pages/home');  
+        router.replace('/pages/home');
     };
 
     const cancelarEdicao = () => {
@@ -252,6 +247,37 @@ const PerfilUsuario = () => {
                                 </Pressable>
                             </HStack>
                         </Box>
+
+                        {mostrarAlertaLogout && (
+                              <Center position="absolute" top={0} left={0} right={0} bottom={0} bg="rgba(0,0,0,0.5)" zIndex={999}>
+                                <Box bg="white" mx={5} p={5} rounded="xl" shadow={4} maxW="80%">
+                                    <VStack space={4}>
+                                        <Text fontSize="lg" fontWeight="bold" textAlign="center">
+                                            Sair da Conta
+                                        </Text>
+                                        <Text fontSize="md" textAlign="center" color="gray.600">
+                                            Tem certeza que deseja sair?
+                                        </Text>
+                                        <HStack space={3} justifyContent="center">
+                                            <Button 
+                                                variant="outline" 
+                                                flex={1}
+                                                onPress={cancelarLogout}
+                                            >
+                                                <Text color="gray.600">Cancelar</Text>
+                                            </Button>
+                                            <Button 
+                                                bg="red.500" 
+                                                flex={1}
+                                                onPress={confirmarLogout}
+                                            >
+                                                <Text color="white">Sair</Text>
+                                            </Button>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
+                            </Center>
+                        )}
 
                         <Box 
                             bg="white" 

@@ -1,14 +1,13 @@
 import React from "react";
 import { Box, HStack, Pressable, Center, Icon, Text } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-
+import { router, usePathname } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function Footer() {
   const [usuarioLogado, setUsuarioLogado] = React.useState(false);
+  const pathname = usePathname();
 
-  // Verificar se usuário está logado
   React.useEffect(() => {
     verificarLogin();
   }, []);
@@ -21,6 +20,17 @@ function Footer() {
       console.error('Erro ao verificar login:', error);
     }
   };
+
+  //
+  const getRotaAtiva = () => {
+    if (pathname.includes('/home')) return 'home';
+    if (pathname.includes('/pesquisa')) return 'pesquisa';
+    if (pathname.includes('/favoritos')) return 'favoritos';
+    if (pathname.includes('/perfil')) return 'perfil';
+    return 'home'; 
+  };
+
+  const rotaAtiva = getRotaAtiva();
 
   const handlePerfilPress = () => {
     if (usuarioLogado) {
@@ -38,28 +48,37 @@ function Footer() {
     }
   };
 
+  const handleHomePress = () => {
+    router.push("/pages/home");
+  };
+
+  const handlePesquisaPress = () => {
+    router.push("/pages/pesquisa");
+  };
+
   return (
-    <Box bg="white" safeAreaBottom shadow={6}>
+    <Box bg="white" safeAreaBottom shadow={6} borderTopWidth={1} borderTopColor="gray.100">
       <HStack bg="white" alignItems="center">
         <HStack flex={1} alignItems="center">
-          {/* Home */}
+
           <Pressable 
             flex={1} 
             alignItems="center" 
             py={3}
-            onPress={() => router.push("/pages/home")}
+            onPress={handleHomePress}
           >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
-                <Icon as={Ionicons}
-                  name="home"
+                <Icon 
+                  as={Ionicons}
+                  name={rotaAtiva === "home" ? "home" : "home-outline"}
                   size="md"
-                  color="blue.500"
+                  color={rotaAtiva === "home" ? "primary.700" : "gray.500"}
                 />
                 <Text
                   fontSize="xs"
-                  color="blue.500"
-                  fontWeight="semibold"
+                  color={rotaAtiva === "home" ? "primary.700" : "gray.500"}
+                  fontWeight={rotaAtiva === "home" ? "semibold" : "medium"}
                   mt={1}
                 >
                   Home
@@ -68,24 +87,32 @@ function Footer() {
             )}
           </Pressable>
 
-          {/* Pesquisa */}
-          <Pressable flex={1} alignItems="center" py={3}>
+          <Pressable 
+            flex={1} 
+            alignItems="center" 
+            py={3}
+            onPress={handlePesquisaPress}
+          >
             {({ isPressed }) => (
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
                   as={Ionicons}
-                  name="search-outline"
+                  name={rotaAtiva === "pesquisa" ? "search" : "search-outline"}
                   size="md"
-                  color="gray.400"
+                  color={rotaAtiva === "pesquisa" ? "primary.700" : "gray.500"}
                 />
-                <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
+                <Text 
+                  fontSize="xs" 
+                  color={rotaAtiva === "pesquisa" ? "primary.700" : "gray.500"} 
+                  fontWeight={rotaAtiva === "pesquisa" ? "semibold" : "medium"}
+                  mt={1}
+                >
                   Pesquisa
                 </Text>
               </Center>
             )}
           </Pressable>
 
-          {/* Favoritos */}
           <Pressable 
             flex={1} 
             alignItems="center" 
@@ -96,15 +123,15 @@ function Footer() {
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
                   as={Ionicons}
-                  name="heart-outline"
+                  name={rotaAtiva === "favoritos" ? "heart" : "heart-outline"}
                   size="md"
-                  color={usuarioLogado ? "red.500" : "gray.400"}
+                  color={rotaAtiva === "favoritos" ? "primary.700" : "gray.500"}
                 />
                 <Text 
                   fontSize="xs" 
-                  color={usuarioLogado ? "red.500" : "gray.400"} 
-                  mt={1} 
-                  fontWeight="medium"
+                  color={rotaAtiva === "favoritos" ? "primary.700" : "gray.500"} 
+                  fontWeight={rotaAtiva === "favoritos" ? "semibold" : "medium"}
+                  mt={1}
                 >
                   Favoritos
                 </Text>
@@ -112,7 +139,6 @@ function Footer() {
             )}
           </Pressable>
 
-          {/* Perfil */}
           <Pressable
             flex={1}
             alignItems="center"
@@ -123,15 +149,15 @@ function Footer() {
               <Center opacity={isPressed ? 0.7 : 1}>
                 <Icon
                   as={Ionicons}
-                  name={usuarioLogado ? "person" : "person-outline"}
+                  name={rotaAtiva === "perfil" ? "person" : "person-outline"}
                   size="md"
-                  color={usuarioLogado ? "green.500" : "gray.400"}
+                  color={rotaAtiva === "perfil" ? "primary.700" : "gray.500"}
                 />
                 <Text 
                   fontSize="xs" 
-                  color={usuarioLogado ? "green.500" : "gray.400"} 
-                  mt={1} 
-                  fontWeight="medium"
+                  color={rotaAtiva === "perfil" ? "primary.700" : "gray.500"} 
+                  fontWeight={rotaAtiva === "perfil" ? "semibold" : "medium"}
+                  mt={1}
                 >
                   Perfil
                 </Text>
