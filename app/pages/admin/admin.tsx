@@ -1,26 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FlatList, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import {
-    NativeBaseProvider, Box, VStack, HStack, Text, Image, Button,
-    Icon, Center, Pressable, extendTheme, AlertDialog, Spinner
+    NativeBaseProvider, Box, VStack, HStack, Text, Button,
+    Icon, Center, Pressable, AlertDialog,Spinner, extendTheme
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ModalEditarNoticia from './editarNews';
+import ListaNoticias from '@/app/components/listaNoticiasAdmin';
 
-// ✅ CORREÇÃO: Interface atualizada para match com backend
-interface Noticia {
-    id: number;
-    imagemURL: string; // ✅ Backend retorna imagemURL
-    titulo: string;
-    autores: string;
-    descricao?: string;
-    categoria?: string;
-    link?: string;
-}
-
-// Tema customizado
 const theme = extendTheme({
     colors: {
         primary: {
@@ -28,6 +17,16 @@ const theme = extendTheme({
         },
     },
 });
+
+interface Noticia {
+    id: number;
+    imagemURL: string;
+    titulo: string;
+    autores: string;
+    descricao?: string;
+    categoria?: string;
+    link?: string;
+}
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -78,7 +77,6 @@ const TelaAdmin = () => {
             const dadosUsuario = await resposta.json();
 
             if (!dadosUsuario.isAdmin) {
-                console.log('Usuário normal tentando acessar Admin - redirecionando para Home');
                 await AsyncStorage.removeItem('userToken');
                 await AsyncStorage.removeItem('loginTime');
                 Alert.alert('Acesso Negado', 'Apenas administradores podem acessar esta área');
@@ -96,30 +94,6 @@ const TelaAdmin = () => {
             setVerificandoAuth(false);
         }
     };
-
-    useEffect(() => {
-        if (!token) return;
-
-        const logoutTimer = setTimeout(() => {
-            Alert.alert(
-                "Sessão Expirada",
-                "Sua sessão expirou por segurança. Faça login novamente.",
-                [
-                    {
-                        text: "OK",
-                        onPress: async () => {
-                            await AsyncStorage.removeItem('userToken');
-                            await AsyncStorage.removeItem('loginTime');
-                            setToken(null);
-                            router.replace('/pages/login');
-                        }
-                    }
-                ]
-            );
-        }, 360000);
-
-        return () => clearTimeout(logoutTimer);
-    }, [token]);
 
     const getAuthHeaders = (authToken?: string) => {
         const headers: HeadersInit = {
@@ -155,7 +129,6 @@ const TelaAdmin = () => {
             }
 
             const noticias = await response.json();
-            console.log('Notícias recebidas do backend:', noticias); // ✅ Debug
             setListaNoticias(noticias);
         } catch (error) {
             console.error('Erro ao buscar notícias:', error);
@@ -168,7 +141,6 @@ const TelaAdmin = () => {
     };
 
     const editarNoticia = (noticia: Noticia) => {
-        console.log(`Editar notícia ${noticia.id}`);
         setNoticiaSelecionada(noticia);
         setModalVisivel(true);
     };
@@ -249,75 +221,6 @@ const TelaAdmin = () => {
         }
     };
 
-    const handleImageError = (item: Noticia) => {
-        console.log(`Erro ao carregar imagem da notícia ${item.id}`);
-    };
-
-    const renderizarNoticia = ({ item }: { item: Noticia }) => (
-        <Box bg="white" rounded="xl" shadow={2} mb={3} overflow="hidden">
-            <HStack space={3} p={3}>
-                {/* ✅ CORREÇÃO: Usa imagemURL em vez de imagem */}
-                <Image
-                    source={{ uri: item.imagemURL }}
-                    alt={item.titulo}
-                    w={20}
-                    h={16}
-                    rounded="lg"
-                    resizeMode="cover"
-                    fallbackSource={{ uri: 'https://via.placeholder.com/80x60?text=Imagem' }}
-                    onError={() => handleImageError(item)}
-                />
-
-                <VStack flex={1} space={1}>
-                    <Text fontSize="md" fontWeight="semibold" color="gray.800" numberOfLines={2}>
-                        {item.titulo}
-                    </Text>
-                    <Text fontSize="xs" color="gray.500">
-                        {item.autores}
-                    </Text>
-                </VStack>
-
-                <VStack space={2}>
-                    <Pressable onPress={() => editarNoticia(item)}>
-                        {({ isPressed }) => (
-                            <Box
-                                bg="blue.50"
-                                p={2}
-                                rounded="lg"
-                                opacity={isPressed ? 0.7 : 1}
-                            >
-                                <Icon
-                                    as={Ionicons}
-                                    name="create-outline"
-                                    size="sm"
-                                    color="blue.500"
-                                />
-                            </Box>
-                        )}
-                    </Pressable>
-
-                    <Pressable onPress={() => confirmarExclusao(item)}>
-                        {({ isPressed }) => (
-                            <Box
-                                bg="red.50"
-                                p={2}
-                                rounded="lg"
-                                opacity={isPressed ? 0.7 : 1}
-                            >
-                                <Icon
-                                    as={Ionicons}
-                                    name="trash-outline"
-                                    size="sm"
-                                    color="red.500"
-                                />
-                            </Box>
-                        )}
-                    </Pressable>
-                </VStack>
-            </HStack>
-        </Box>
-    );
-
     if (verificandoAuth) {
         return (
             <NativeBaseProvider theme={theme}>
@@ -354,7 +257,7 @@ const TelaAdmin = () => {
     }
 
     return (
-        <NativeBaseProvider theme={theme}>
+            <NativeBaseProvider theme={theme}>
             <Box flex={1} bg="primary.700" safeArea>
                 <Box bg="primary.700" px={5} py={6}>
                     <HStack alignItems="center" justifyContent="space-between">
@@ -374,50 +277,13 @@ const TelaAdmin = () => {
 
                 <Box flex={1} bg="gray.50" roundedTop="3xl" shadow={4} mt={-2}>
                     <VStack flex={1} px={5} py={6} space={4}>
-                        <VStack flex={1} space={2}>
-                            <HStack justifyContent="space-between" alignItems="center">
-                                <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                                    Notícias Cadastradas
-                                </Text>
-                                <Text fontSize="sm" color="gray.500">
-                                    {listaNoticias.length} itens
-                                </Text>
-                            </HStack>
-
-                            <Box flex={1}>
-                                {carregando ? (
-                                    <Center flex={1}>
-                                        <VStack space={4} alignItems="center">
-                                            <Spinner size="lg" color="primary.700" />
-                                            <Text color="gray.600">Carregando notícias...</Text>
-                                        </VStack>
-                                    </Center>
-                                ) : (
-                                    <FlatList
-                                        data={listaNoticias}
-                                        renderItem={renderizarNoticia}
-                                        keyExtractor={(item) => item.id.toString()}
-                                        showsVerticalScrollIndicator={false}
-                                        contentContainerStyle={{
-                                            paddingBottom: 20,
-                                            flexGrow: listaNoticias.length === 0 ? 1 : 0
-                                        }}
-                                        ListEmptyComponent={() => (
-                                            <Center flex={1} py={10}>
-                                                <VStack space={3} alignItems="center">
-                                                    <Icon as={Ionicons} name="newspaper-outline" size="4xl" color="gray.400" />
-                                                    <Text color="gray.500" textAlign="center">
-                                                        Nenhuma notícia cadastrada
-                                                    </Text>
-                                                </VStack>
-                                            </Center>
-                                        )}
-                                        refreshing={carregando}
-                                        onRefresh={() => buscarNoticias()}
-                                    />
-                                )}
-                            </Box>
-                        </VStack>
+                        <ListaNoticias
+                            noticias={listaNoticias}
+                            carregando={carregando}
+                            onRefresh={() => buscarNoticias()}
+                            onEdit={editarNoticia}
+                            onDelete={confirmarExclusao}
+                        />
                     </VStack>
                 </Box>
 
@@ -440,12 +306,12 @@ const TelaAdmin = () => {
                             </Pressable>
 
                             <Pressable flex={1} alignItems="center" py={3}>
-                                {/* <Center>
-                                    <Icon as={Ionicons} name="person-outline" size="md" color="gray.400" />
+                                <Center>
+                                    {/* <Icon as={Ionicons} name="person-outline" size="md" color="gray.400" />
                                     <Text fontSize="xs" color="gray.400" mt={1} fontWeight="medium">
                                         Perfil
-                                    </Text>
-                                </Center> */}
+                                    </Text> */}
+                                </Center>
                             </Pressable>
                         </HStack>
                     </HStack>

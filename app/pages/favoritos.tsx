@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FlatList, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { NativeBaseProvider, Box, HStack,Text,Button,Icon,Center,Pressable,
-         extendTheme,Spinner,useToast, VStack} from 'native-base';
+import { 
+  NativeBaseProvider, Box, HStack, Text, Button, Icon, Center, Pressable,
+  extendTheme, Spinner, useToast, VStack 
+} from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import Footer from '../components/footer';
-import FavoriteCard, { FavoriteItem } from '../components/favoriteCard'; // ✅ Importando o componente
+import FavoriteCard, { FavoriteItem } from '../components/favoriteCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const theme = extendTheme({
@@ -16,13 +18,14 @@ const theme = extendTheme({
   },
 });
 
+const API_BASE_URL = 'http://localhost:3000/api';
+
 const Favoritos = () => {
   const [favoritos, setFavoritos] = useState<FavoriteItem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [removendo, setRemovendo] = useState<number | null>(null);
   
   const toast = useToast();
-  const API_BASE_URL = 'http://localhost:3000/api';
 
   useEffect(() => {
     carregarFavoritos();
@@ -39,21 +42,21 @@ const Favoritos = () => {
 
   const carregarFavoritos = async () => {
     try {
-        setCarregando(true);
-        const token = await AsyncStorage.getItem('userToken');
-        
-        if (!token) {
-            mostrarToast('Ação Necessária', 'Faça login para ver seus favoritos', 'warning');
-            router.push('/pages/login');
-            return;
-        }
-
-        const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
+      setCarregando(true);
+      const token = await AsyncStorage.getItem('userToken');
       
+      if (!token) {
+        mostrarToast('Ação Necessária', 'Faça login para ver seus favoritos', 'warning');
+        router.push('/pages/login');
+        return;
+      }
+
+      const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    
       if (resposta.status === 401) {
         await AsyncStorage.removeItem('userToken');
         mostrarToast('Sessão Expirada', 'Faça login novamente', 'warning');
@@ -78,20 +81,20 @@ const Favoritos = () => {
 
   const removeFavorite = async (id: number) => {
     try {
-        setRemovendo(id);
-        const token = await AsyncStorage.getItem('userToken');
-        
-        if (!token) {
-            mostrarToast('Erro', 'Sessão expirada', 'error');
-            return;
-        }
+      setRemovendo(id);
+      const token = await AsyncStorage.getItem('userToken');
+      
+      if (!token) {
+        mostrarToast('Erro', 'Sessão expirada', 'error');
+        return;
+      }
 
-        const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
+      const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (resposta.ok) {
         setFavoritos(favoritos.filter(item => item.id !== id));
@@ -129,7 +132,6 @@ const Favoritos = () => {
     });
   };
 
-  // ✅ AGORA SIMPLES E LIMPO!
   const renderFavoriteItem = ({ item }: { item: FavoriteItem }) => (
     <FavoriteCard
       item={item}
@@ -194,7 +196,6 @@ const Favoritos = () => {
   return (
     <NativeBaseProvider theme={theme}>
       <Box flex={1} bg="white" safeArea>
-        {/* Header */}
         <Box bg="primary.700" px={5} py={5}>
           <HStack alignItems="center" justifyContent="space-between">
             <Box flex={1}>
@@ -219,7 +220,6 @@ const Favoritos = () => {
           </HStack>
         </Box>
 
-        {/* Conteúdo */}
         <Box flex={1} bg="white" roundedTop="3xl" shadow={4} mt={-2}>
           {carregando ? (
             <Loading />
@@ -227,7 +227,6 @@ const Favoritos = () => {
             <EmptyState />
           ) : (
             <Box flex={1} px={2} py={4}>
-              {/* Contador de favoritos */}
               <Box px={4} mb={3}>
                 <Text fontSize="sm" color="gray.500">
                   {favoritos.length} {favoritos.length === 1 ? 'notícia favoritada' : 'notícias favoritadas'}

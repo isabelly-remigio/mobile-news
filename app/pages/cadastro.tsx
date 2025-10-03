@@ -25,6 +25,8 @@ const theme = extendTheme({
   },
 });
 
+const API_BASE_URL = 'http://localhost:3000/api';
+
 function Cadastro() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -34,7 +36,6 @@ function Cadastro() {
   const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   
-// Estados para mensagens de erro
   const [erroNome, setErroNome] = useState("");
   const [erroEmail, setErroEmail] = useState("");
   const [erroSenha, setErroSenha] = useState("");
@@ -47,7 +48,6 @@ function Cadastro() {
     setErroEmail("");
     setErroSenha("");
     setErroConfirmarSenha("");
-
 
     if (!nome.trim()) {
       setErroNome("O nome é obrigatório");
@@ -62,7 +62,6 @@ function Cadastro() {
       valido = false;
     }
 
-
     if (!senha) {
       setErroSenha("A senha é obrigatória");
       valido = false;
@@ -70,7 +69,6 @@ function Cadastro() {
       setErroSenha("A senha deve ter pelo menos 6 caracteres");
       valido = false;
     }
-
 
     if (!confirmarSenha) {
       setErroConfirmarSenha("Confirme sua senha");
@@ -82,8 +80,6 @@ function Cadastro() {
 
     return valido;
   };
-
-
 
   const verificarSenhas = (valor: string) => {
     setConfirmarSenha(valor);
@@ -102,7 +98,7 @@ function Cadastro() {
     setCarregando(true);
 
     try {
-      const resposta = await fetch('http://localhost:3000/api/auth/cadastro', {
+      const resposta = await fetch(`${API_BASE_URL}/auth/cadastro`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,22 +119,10 @@ function Cadastro() {
           [
             { 
               text: "OK", 
-              onPress: () => {
-
-
-                console.log('Redirecionando para login...');
-                router.replace('/pages/login');
-              }
+              onPress: () => router.replace('/pages/login')
             }
           ]
         );
-        
-
-
-        setTimeout(() => {
-          router.replace('/pages/login');
-        }, 2000);
-        
       } else {
         Alert.alert("Erro no cadastro", dados.error || "Erro ao realizar cadastro");
       }
@@ -147,6 +131,16 @@ function Cadastro() {
       Alert.alert("Erro de conexão", "Não foi possível conectar ao servidor. Verifique sua conexão.");
     } finally {
       setCarregando(false);
+    }
+  };
+
+  const handleSenhaChange = (texto: string) => {
+    setSenha(texto);
+    setErroSenha("");
+    if (confirmarSenha && texto !== confirmarSenha) {
+      setErroConfirmarSenha("As senhas não coincidem");
+    } else {
+      setErroConfirmarSenha("");
     }
   };
 
@@ -177,8 +171,6 @@ function Cadastro() {
               contentContainerStyle={{ paddingBottom: 40 }}
             >
               <VStack space={4}>
-
-
                 <VStack space={1}>
                   <Input
                     placeholder="Nome completo"
@@ -197,7 +189,6 @@ function Cadastro() {
                     </Text>
                   ) : null}
                 </VStack>
-
 
                 <VStack space={1}>
                   <Input
@@ -220,24 +211,12 @@ function Cadastro() {
                   ) : null}
                 </VStack>
 
-                {/* Campo Senha */}
                 <VStack space={1}>
                   <Input
                     placeholder="Senha (mínimo 6 caracteres)"
                     type={mostrarSenha ? "text" : "password"}
                     value={senha}
-                    onChangeText={(texto) => {
-                      setSenha(texto);
-                      setErroSenha("");
-
-// Verificar se a senha bate com confirmarSenha
-
-                      if (confirmarSenha && texto !== confirmarSenha) {
-                        setErroConfirmarSenha("As senhas não coincidem");
-                      } else {
-                        setErroConfirmarSenha("");
-                      }
-                    }}
+                    onChangeText={handleSenhaChange}
                     isDisabled={carregando}
                     fontSize="md"
                     borderColor={erroSenha ? "red.500" : "gray.300"}
@@ -262,7 +241,6 @@ function Cadastro() {
                   ) : null}
                 </VStack>
 
-                {/* Campo Confirmar Senha */}
                 <VStack space={1}>
                   <Input
                     placeholder="Confirmar Senha"
@@ -320,7 +298,7 @@ function Cadastro() {
                         fontWeight: "bold",
                         textDecorationLine: "none",
                       }} 
-                      onPress={() => !carregando && router.push('pages/login')}
+                      onPress={() => !carregando && router.push('/pages/login')}
                     >
                       Faça o login
                     </Link>

@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Alert } from 'react-native'; 
-import { Modal, Box, VStack, HStack, Text, ScrollView, Input, TextArea, Button, Icon,
-        Pressable,Select, CheckIcon, Image, useToast, Spinner} from 'native-base';
+import { 
+    Modal, Box, VStack, HStack, Text, ScrollView, Input, TextArea, Button, Icon,
+    Pressable, Select, CheckIcon, Image, useToast, Spinner 
+} from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE_URL = 'http://localhost:3000/api';
+
+const categorias = ['Notícias', 'Negócios', 'Tecnologia', 'Esportes'];
 
 const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
     const [titulo, setTitulo] = useState('');
@@ -16,22 +22,12 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
 
     const toast = useToast();
 
-    const URL_API = 'http://localhost:3000/api';
-
-    const categorias = [
-        'Notícias',
-        'Negócios',
-        'Tecnologia',
-        'Esportes',
-    ];
-
     useEffect(() => {
         if (noticia) {
-            console.log('Dados da notícia recebidos:', noticia);
             setTitulo(noticia.titulo || '');
             setImagemUrl(noticia.imagemURL || ''); 
             setDescricao(noticia.descricao || '');
-            setAutor( noticia.autor || '');
+            setAutor(noticia.autor || '');
             setLink(noticia.link || '');
             setCategoria(noticia.categoria || '');
         }
@@ -39,47 +35,28 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
 
     const validarCampos = () => {
         if (!titulo.trim()) {
-            toast.show({
-                description: "O título é obrigatório",
-                status: "warning"
-            });
+            toast.show({ description: "O título é obrigatório", status: "warning" });
             return false;
         }
-
         if (!descricao.trim()) {
-            toast.show({
-                description: "A descrição é obrigatória",
-                status: "warning"
-            });
+            toast.show({ description: "A descrição é obrigatória", status: "warning" });
             return false;
         }
-
         if (!autor.trim()) {
-            toast.show({
-                description: "O autor é obrigatório",
-                status: "warning"
-            });
+            toast.show({ description: "O autor é obrigatório", status: "warning" });
             return false;
         }
-
         if (!categoria) {
-            toast.show({
-                description: "A categoria é obrigatória",
-                status: "warning"
-            });
+            toast.show({ description: "A categoria é obrigatória", status: "warning" });
             return false;
         }
-
         return true;
     };
 
     const salvarAlteracoes = async () => {
         if (!validarCampos()) return;
         if (!noticia?.id) {
-            toast.show({
-                description: "Erro: ID da notícia não encontrado",
-                status: "error"
-            });
+            toast.show({ description: "Erro: ID da notícia não encontrado", status: "error" });
             return;
         }
 
@@ -88,10 +65,7 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
             if (!token) {
-                toast.show({
-                    description: "Sessão expirada. Faça login novamente.",
-                    status: "error"
-                });
+                toast.show({ description: "Sessão expirada. Faça login novamente.", status: "error" });
                 fechar();
                 return;
             }
@@ -105,9 +79,7 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
                 imagemURL: imagemUrl.trim()
             };
 
-            console.log('Enviando para API:', dadosAtualizacao);
-
-            const resposta = await fetch(`${URL_API}/noticias/${noticia.id}`, {
+            const resposta = await fetch(`${API_BASE_URL}/noticias/${noticia.id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -118,10 +90,7 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
 
             if (resposta.status === 401) {
                 await AsyncStorage.removeItem('userToken');
-                toast.show({
-                    description: "Sessão expirada. Faça login novamente.",
-                    status: "error"
-                });
+                toast.show({ description: "Sessão expirada. Faça login novamente.", status: "error" });
                 fechar();
                 return;
             }
@@ -131,12 +100,8 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
                 throw new Error(erro.error || `Erro ${resposta.status}: ${resposta.statusText}`);
             }
 
-            const resultado = await resposta.json();
-
-            toast.show({
-                description: "Notícia atualizada com sucesso!",
-                status: "success"
-            });
+            await resposta.json();
+            toast.show({ description: "Notícia atualizada com sucesso!", status: "success" });
 
             if (aoSalvar) {
                 aoSalvar({
@@ -167,7 +132,7 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
         const temAlteracoes = 
             titulo !== (noticia?.titulo || '') ||
             descricao !== (noticia?.descricao || '') ||
-            autor !== (noticia?.autores || noticia?.autor || '') ||
+            autor !== (noticia?.autor || '') ||
             imagemUrl !== (noticia?.imagemURL || '') ||
             link !== (noticia?.link || '') ||
             categoria !== (noticia?.categoria || '');
@@ -186,27 +151,15 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
         }
     };
 
-    const fecharDireto = () => {
-        fechar();
-    };
-
     return (
-
-        <Modal
-            isOpen={visivel}
-            onClose={fecharDireto}
-            size="xl"
-            avoidKeyboard
-        >
+        <Modal isOpen={visivel} onClose={fechar} size="xl" avoidKeyboard>
             <Modal.Content maxWidth="400px" borderRadius="xl">
-                {/* Header */}
                 <Box bg="blue.600" px={4} py={3} borderTopRadius="xl">
                     <HStack alignItems="center" justifyContent="space-between">
                         <Text fontSize="lg" fontWeight="bold" color="white">
                             Editar Notícia
                         </Text>
-                        {/* ✅ CORREÇÃO: Botão X fecha direto */}
-                        <Pressable onPress={fecharDireto} hitSlop={8}>
+                        <Pressable onPress={fechar} hitSlop={8}>
                             <Icon as={Ionicons} name="close" size="sm" color="white" />
                         </Pressable>
                     </HStack>
@@ -215,7 +168,6 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
                 <Modal.Body p={4} maxH="600px">
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <VStack space={4}>
-
                             <VStack space={1}>
                                 <Text fontSize="sm" fontWeight="medium" color="gray.700">
                                     Título *
@@ -330,7 +282,6 @@ const ModalEditarNoticia = ({ visivel, fechar, noticia, aoSalvar }) => {
 
                 <Modal.Footer bg="gray.50" borderBottomRadius="xl">
                     <HStack space={3} w="full">
-
                         <Button
                             variant="outline"
                             flex={1}

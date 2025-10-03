@@ -29,6 +29,8 @@ const theme = extendTheme({
   },
 });
 
+const API_BASE_URL = 'http://localhost:3000/api';
+
 interface Noticia {
   id: number;
   titulo: string;
@@ -52,8 +54,6 @@ const DetalhesNoticias = () => {
   const params = useLocalSearchParams();
   
   const idNoticia = params.id ? String(params.id) : null;
-  
-  const API_BASE_URL = 'http://localhost:3000/api';
 
   useEffect(() => {
     if (idNoticia) {
@@ -61,7 +61,6 @@ const DetalhesNoticias = () => {
       verificarFavorito();
     } else {
       setCarregando(false);
-      console.error('ID da notícia não fornecido');
     }
   }, [idNoticia]);
 
@@ -125,8 +124,7 @@ const DetalhesNoticias = () => {
     }
   };
 
-// Mude a URL base para as rotas de usuários
-const verificarFavorito = async () => {
+  const verificarFavorito = async () => {
     if (!idNoticia) return;
     
     try {
@@ -136,7 +134,6 @@ const verificarFavorito = async () => {
             return;
         }
 
-        // ✅ CORRETO: GET /usuarios/favoritos
         const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -153,9 +150,9 @@ const verificarFavorito = async () => {
     } finally {
         setVerificandoFavorito(false);
     }
-};
+  };
 
-const handleFavoriteToggle = async () => {
+  const handleFavoriteToggle = async () => {
     if (!idNoticia) {
         mostrarToast('Erro', 'ID da notícia não encontrado', 'error');
         return;
@@ -173,7 +170,6 @@ const handleFavoriteToggle = async () => {
         setSalvandoFavorito(true);
 
         if (favorito) {
-            // ✅ CORRETO: DELETE /usuarios/favoritos/37
             const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${idNoticia}`, {
                 method: 'DELETE',
                 headers: {
@@ -188,7 +184,6 @@ const handleFavoriteToggle = async () => {
                 throw new Error('Erro ao remover dos favoritos');
             }
         } else {
-            // ✅ CORRETO: POST /usuarios/favoritos/37
             const resposta = await fetch(`${API_BASE_URL}/usuarios/favoritos/${idNoticia}`, {
                 method: 'POST',
                 headers: {
@@ -200,8 +195,6 @@ const handleFavoriteToggle = async () => {
                 setFavorito(true);
                 mostrarToast('Sucesso', 'Notícia adicionada aos favoritos', 'success');
             } else {
-                const textoErro = await resposta.text();
-                console.error('Resposta do servidor:', textoErro);
                 throw new Error('Erro ao favoritar - ' + resposta.status);
             }
         }
@@ -211,10 +204,10 @@ const handleFavoriteToggle = async () => {
     } finally {
         setSalvandoFavorito(false);
     }
-};
+  };
+
   const handleErroImagem = () => {
     setErroImagem(true);
-    console.log('Erro ao carregar imagem');
   };
 
   if (carregando) {
@@ -253,7 +246,6 @@ const handleFavoriteToggle = async () => {
   return (
     <NativeBaseProvider theme={theme}>
       <Box flex={1} bg="white" safeArea>
-        {/* Header apenas com seta de voltar - CORREÇÃO */}
         <HStack justifyContent="flex-start" alignItems="center" px={4} py={3}>
           <Pressable onPress={() => router.back()}>
             {({ isPressed }) => (
@@ -269,7 +261,6 @@ const handleFavoriteToggle = async () => {
         </HStack>
 
         <ScrollView flex={1} showsVerticalScrollIndicator={false}>
-          {/* Imagem com ícone de favorito em cima - CORREÇÃO */}
           <Box px={4} mb={4} position="relative">
             {erroImagem || !noticia.imagem ? (
               <Center w="full" h={64} bg="gray.200" rounded="md">
@@ -290,7 +281,6 @@ const handleFavoriteToggle = async () => {
               />
             )}
 
-            {/* Ícone de favorito em cima da imagem - CORREÇÃO */}
             <Box position="absolute" bottom={3} right={7}>
               <Pressable 
                 onPress={handleFavoriteToggle} 
@@ -362,7 +352,6 @@ const handleFavoriteToggle = async () => {
               </VStack>
             )}
 
-            {/* Botão "Notícia Completa" - CORREÇÃO */}
             <Box mt={8} mb={6}>
               <Button
                 variant="outline"

@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-    NativeBaseProvider,
-    Box,
-    VStack,
-    HStack,
-    Text,
-    Avatar,
-    ScrollView,
-    Input,
-    Button,
-    Icon,
-    Pressable,
-    extendTheme,
-    Spinner,
-    Center,
-    useToast,
+    NativeBaseProvider,Box,VStack,HStack,Text,Avatar,ScrollView,Input,
+    Button,Icon,Pressable,extendTheme,Spinner,Center,useToast,
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAvoidingView, Platform, Alert } from 'react-native';
@@ -178,11 +165,12 @@ const PerfilUsuario = () => {
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('loginTime');
             await AsyncStorage.removeItem('userData');
+            console.log('Sessão limpa com sucesso');
         } catch (error) {
             console.error('Erro ao limpar sessão:', error);
         }
     };
-//tem que refazer
+
     const fazerLogout = async () => {
         Alert.alert(
             "Sair da Conta",
@@ -194,8 +182,9 @@ const PerfilUsuario = () => {
                     onPress: async () => {
                         try {
                             await limparSessao();
-                            console.log('Logout realizado com sucesso');
-                            router.replace('/pages/home');  
+                            console.log('Redirecionando para home após logout');
+                            // CORREÇÃO: Usar replace em vez de navigate
+                            router.replace('/pages/home');
                         } catch (error) {
                             console.error('Erro no logout:', error);
                             router.replace('/pages/home');
@@ -207,7 +196,7 @@ const PerfilUsuario = () => {
     };
 
     const voltarParaHome = () => {
-        router.navigate('/pages/home');  
+        router.replace('/pages/home');  
     };
 
     const cancelarEdicao = () => {
@@ -250,7 +239,6 @@ const PerfilUsuario = () => {
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ flexGrow: 1 }}
                     >
-                        {/* Header */}
                         <Box bg="primary.700" px={5} py={5}>
                             <HStack alignItems="center" justifyContent="space-between">
                                 <Pressable onPress={voltarParaHome}>
@@ -297,7 +285,6 @@ const PerfilUsuario = () => {
 
                             <Box px={5} pb={8}>
                                 <VStack space={4}>
-
                                     <VStack space={1}>
                                         <Text fontSize="sm" color="gray.600" fontWeight="medium">
                                             Nome

@@ -21,7 +21,6 @@ import CardNews from "../components/cardNews";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 
-// Tema customizado
 const theme = extendTheme({
   colors: {
     primary: {
@@ -30,7 +29,7 @@ const theme = extendTheme({
   },
 });
 
-// Interface para Notícia
+// Definição de interfaces para tipagem
 interface Noticia {
   id: number;
   titulo: string;
@@ -42,7 +41,6 @@ interface Noticia {
   dataPublicacao: string;
 }
 
-// Interface para Usuário
 interface Usuario {
   id: number;
   nome: string;
@@ -62,6 +60,7 @@ const Home = () => {
 
   const API_BASE_URL = 'http://localhost:3000/api';
 
+//filtragem
   const categories = [
     { icon: "newspaper-outline", label: "Notícias", value: "Notícias" },
     { icon: "trending-up", label: "Negócios", value: "Negócios" },
@@ -69,25 +68,21 @@ const Home = () => {
     { icon: "american-football-outline", label: "Esportes", value: "Esportes" },
   ];
 
-  // Buscar dados do usuário e notícias
   useEffect(() => {
     verificarTipoUsuario();
     buscarNoticias();
   }, []);
 
-  // Atualizar notícias filtradas quando categoria ou noticias mudarem
   useEffect(() => {
     filtrarNoticias();
   }, [categoriaSelecionada, noticias]);
 
-  // VERIFICAÇÃO CRÍTICA: Bloquear acesso de Admin à Home
   const verificarTipoUsuario = async () => {
     try {
       setCarregando(true);
       const token = await AsyncStorage.getItem('userToken');
 
       if (!token) {
-        // Sem token = usuário não logado, pode ver Home normalmente
         setUsuarioLogado(false);
         setCarregando(false);
         return;
@@ -102,7 +97,6 @@ const Home = () => {
       });
 
       if (resposta.status === 401) {
-        // Token inválido, limpar e considerar como não logado
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('loginTime');
         setUsuarioLogado(false);
@@ -116,9 +110,8 @@ const Home = () => {
 
       const dadosUsuario = await resposta.json();
 
-      // VERIFICAÇÃO CRÍTICA: Se for Admin, redireciona para área Admin e faz logout
+      // Redirecionamento de administradores para área administrativa
       if (dadosUsuario.isAdmin) {
-        console.log('Admin tentando acessar Home - redirecionando para Admin');
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('loginTime');
         await AsyncStorage.removeItem('userData');
@@ -131,7 +124,6 @@ const Home = () => {
         return;
       }
 
-      // Se chegou aqui, é usuário normal válido
       setUsuario(dadosUsuario);
       setUsuarioLogado(true);
 
@@ -143,7 +135,6 @@ const Home = () => {
     }
   };
 
-  // Buscar notícias da API
   const buscarNoticias = async () => {
     try {
       setCarregandoNoticias(true);
@@ -171,7 +162,6 @@ const Home = () => {
     }
   };
 
-  // Filtrar notícias por categoria
   const filtrarNoticias = () => {
     if (!categoriaSelecionada) {
       setNoticiasFiltradas(noticias);
@@ -183,9 +173,7 @@ const Home = () => {
     }
   };
 
-  // Função para lidar com categoria selecionada
   const handleCategoriaPress = (categoria: string) => {
-    // Se clicar na mesma categoria, deseleciona
     if (categoriaSelecionada === categoria) {
       setCategoriaSelecionada(null);
     } else {
@@ -193,7 +181,6 @@ const Home = () => {
     }
   };
 
-  // Função para recarregar
   const recarregar = () => {
     setErro(null);
     setCategoriaSelecionada(null);
@@ -205,14 +192,13 @@ const Home = () => {
     router.push("/pages/login");
   };
 
-  // Gerar cor aleatória para o avatar baseada na inicial
+//cor dos avatares
   const gerarCorAvatar = (letra: string) => {
     const cores = ["red.500", "orange.500", "green.500", "teal.500", "blue.500", "purple.500"];
     const index = letra.charCodeAt(0) % cores.length;
     return cores[index];
   };
 
-  // Tela de loading
   if (carregando) {
     return (
       <NativeBaseProvider theme={theme}>
@@ -232,10 +218,8 @@ const Home = () => {
     <NativeBaseProvider theme={theme}>
       <Box flex={1} bg="white" safeArea>
         <ScrollView flex={1} showsVerticalScrollIndicator={false} bg="primary.700">
-          {/* Header */}
           <Box bg="primary.700" px={5} py={4}>
             <HStack alignItems="center" space={3}>
-              {/* Avatar - Mostra inicial se logado, ícone genérico se não */}
               {usuarioLogado ? (
                 <Avatar
                   bg={usuario ? gerarCorAvatar(usuario.nome.charAt(0)) : "gray.500"}
@@ -247,10 +231,7 @@ const Home = () => {
                 </Avatar>
               ) : (
                 <Pressable onPress={fazerLogin}>
-                  <Avatar
-                    bg="gray.400"
-                    size="md"
-                  >
+                  <Avatar bg="gray.400" size="md">
                     <Icon as={Ionicons} name="person-outline" size="sm" color="white" />
                   </Avatar>
                 </Pressable>
@@ -287,7 +268,6 @@ const Home = () => {
           </Box>
 
           <Box bg="white" roundedTop="3xl" shadow={4} mt={-2} minH="full">
-            {/* Categorias */}
             <Box px={5} py={6}>
               <HStack justifyContent="space-between" alignItems="center">
                 {categories.map((category, index) => (
@@ -350,12 +330,13 @@ const Home = () => {
               </HStack>
             </Box>
 
-            {/* Notícias */}
+            {/* Seção de notícias */}
             <Box px={5} py={2}>
               <Text fontSize="xl" fontWeight="bold" color="gray.800" mb={5}>
                 Últimas Notícias
               </Text>
 
+              {/* Banner de incentivo ao login */}
               {!usuarioLogado && (
                 <Center bg="blue.50" p={4} rounded="lg" mb={4}>
                   <HStack space={3} alignItems="center">
@@ -401,7 +382,6 @@ const Home = () => {
                 </Center>
               )}
 
-              {/* Lista de Notícias */}
               {!carregandoNoticias && !erro && (
                 <VStack space={5}>
                   {noticiasFiltradas.length > 0 ? (
@@ -434,7 +414,6 @@ const Home = () => {
                     </Center>
                   )}
                 </VStack>
-
               )}
 
               <Box h={20} />

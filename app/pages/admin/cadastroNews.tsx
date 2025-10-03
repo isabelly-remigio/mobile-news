@@ -1,30 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import {
-    NativeBaseProvider,
-    Box,
-    VStack,
-    HStack,
-    Text,
-    ScrollView,
-    Image,
-    Input,
-    TextArea,
-    Button,
-    Icon,
-    Pressable,
-    Select,
-    CheckIcon,
-    extendTheme,
-    Spinner,
-    Center
+    NativeBaseProvider, Box, VStack, HStack, Text, ScrollView, Image, Input,
+    TextArea, Button, Icon, Pressable, Select, CheckIcon, extendTheme, Spinner, Center
 } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Tema customizado
 const theme = extendTheme({
     colors: {
         primary: {
@@ -33,7 +16,8 @@ const theme = extendTheme({
     },
 });
 
-// Interface para o formulário
+const API_BASE_URL = 'http://localhost:3000/api';
+
 interface DadosFormulario {
     titulo: string;
     imagemURL: string;
@@ -53,19 +37,11 @@ const CadastroNews = () => {
         link: ''
     });
 
-    const [imagemSelecionada, setImagemSelecionada] = useState<string | null>(null);
     const [carregando, setCarregando] = useState(false);
-    const [carregandoImagem, setCarregandoImagem] = useState(false);
     const [token, setToken] = useState<string | null>(null);
     const [verificandoAuth, setVerificandoAuth] = useState(true);
 
-    // Categorias disponíveis
-    const categorias = [
-        'Notícias',
-        'Negócios',
-        'Tecnologia',
-        'Esportes',
-    ];
+    const categorias = ['Notícias', 'Negócios', 'Tecnologia', 'Esportes'];
 
     useEffect(() => {
         verificarAutenticacao();
@@ -74,7 +50,7 @@ const CadastroNews = () => {
     const verificarAutenticacao = async () => {
         try {
             setVerificandoAuth(true);
-            
+
             const loginTime = await AsyncStorage.getItem('loginTime');
             if (!loginTime) {
                 await AsyncStorage.removeItem('userToken');
@@ -103,7 +79,7 @@ const CadastroNews = () => {
             }
 
             setToken(userToken);
-            
+
         } catch (error) {
             console.error('Erro ao verificar autenticação:', error);
             Alert.alert('Erro', 'Não foi possível verificar a autenticação.');
@@ -153,20 +129,13 @@ const CadastroNews = () => {
         setCarregando(true);
 
         try {
-            const resposta = await fetch('http://localhost:3000/api/noticias', {
+            const resposta = await fetch(`${API_BASE_URL}/noticias`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    titulo: dadosFormulario.titulo,
-                    autor: dadosFormulario.autor,
-                    descricao: dadosFormulario.descricao,
-                    categoria: dadosFormulario.categoria,
-                    link: dadosFormulario.link,
-                    imagemURL: dadosFormulario.imagemURL,
-                })
+                body: JSON.stringify(dadosFormulario)
             });
 
             if (resposta.status === 401) {
@@ -182,9 +151,12 @@ const CadastroNews = () => {
 
             if (resposta.ok) {
                 Alert.alert('Sucesso', 'Notícia salva com sucesso!', [
-                    { 
-                        text: 'OK', 
-                        onPress: () => router.replace('/pages/admin/admin')
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            // CORREÇÃO: Usar replace em vez de navigate para evitar voltar para esta tela
+                            router.replace('/pages/admin/admin');
+                        }
                     }
                 ]);
             } else {
@@ -198,10 +170,8 @@ const CadastroNews = () => {
         }
     };
 
-    // ✅ CORREÇÃO: Função cancelar corrigida
     const cancelarEdicao = () => {
-        // Verifica se há dados não salvos
-        const hasUnsavedChanges = 
+        const hasUnsavedChanges =
             dadosFormulario.titulo.trim() !== '' ||
             dadosFormulario.descricao.trim() !== '' ||
             dadosFormulario.autor.trim() !== '' ||
@@ -211,8 +181,8 @@ const CadastroNews = () => {
 
         if (hasUnsavedChanges) {
             Alert.alert(
-                'Cancelar', 
-                'Tem certeza que deseja cancelar? Os dados não salvos serão perdidos.', 
+                'Cancelar',
+                'Tem certeza que deseja cancelar? Os dados não salvos serão perdidos.',
                 [
                     { text: 'Continuar editando', style: 'cancel' },
                     { 
@@ -222,14 +192,12 @@ const CadastroNews = () => {
                 ]
             );
         } else {
-            // Se não há dados, vai direto para admin
             router.replace('/pages/admin/admin');
         }
     };
 
-    // ✅ CORREÇÃO: Função para voltar para admin (seta do header)
     const voltarParaAdmin = () => {
-        cancelarEdicao(); // Reutiliza a mesma lógica
+        cancelarEdicao();
     };
 
     if (verificandoAuth) {
@@ -273,27 +241,22 @@ const CadastroNews = () => {
     return (
         <NativeBaseProvider theme={theme}>
             <Box flex={1} bg="primary.700" safeArea>
-                {/* Header com título centralizado e seta voltando para admin */}
                 <Box bg="primary.700" px={5} py={5}>
                     <HStack alignItems="center" justifyContent="space-between">
                         <Pressable onPress={voltarParaAdmin} hitSlop={10}>
                             <Icon as={Ionicons} name="chevron-back-outline" size="lg" color="white" />
                         </Pressable>
-                        
-                        {/* Título centralizado */}
                         <Box flex={1} alignItems="center">
                             <Text fontSize="lg" fontWeight="bold" color="white">
                                 Cadastrar Notícia
                             </Text>
                         </Box>
-                        
-                        {/* Espaço vazio para balancear o layout */}
                         <Box w={6} />
                     </HStack>
                 </Box>
 
                 <Box flex={1} bg="gray.50" roundedTop="3xl" shadow={4} mt={-2}>
-                    <ScrollView flex={1} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
                         <Box bg="white" mx={5} my={6} rounded="xl" shadow={2} p={5}>
                             <VStack space={5}>
                                 <VStack space={2}>
@@ -310,7 +273,6 @@ const CadastroNews = () => {
                                     />
                                 </VStack>
 
-                                {/* Campo Imagem URL */}
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">URL da Imagem *</Text>
                                     <Input
@@ -323,7 +285,6 @@ const CadastroNews = () => {
                                         fontSize="md"
                                         isDisabled={carregando}
                                     />
-
                                     {dadosFormulario.imagemURL ? (
                                         <Image
                                             source={{ uri: dadosFormulario.imagemURL }}
@@ -337,7 +298,6 @@ const CadastroNews = () => {
                                     ) : null}
                                 </VStack>
 
-                                {/* Campo Descrição */}
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">Descrição *</Text>
                                     <TextArea
@@ -354,7 +314,6 @@ const CadastroNews = () => {
                                     />
                                 </VStack>
 
-                                {/* Campo Autor */}
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">Autor *</Text>
                                     <Input
@@ -369,7 +328,6 @@ const CadastroNews = () => {
                                     />
                                 </VStack>
 
-                                {/* Campo Link */}
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">Link da Notícia *</Text>
                                     <Input
@@ -384,7 +342,6 @@ const CadastroNews = () => {
                                     />
                                 </VStack>
 
-                                {/* Campo Categoria */}
                                 <VStack space={2}>
                                     <Text fontSize="md" fontWeight="semibold" color="gray.700">Categoria *</Text>
                                     <Select
@@ -407,7 +364,6 @@ const CadastroNews = () => {
                             </VStack>
                         </Box>
 
-                        {/* Botões de Ação */}
                         <VStack space={3} mx={5} mb={6}>
                             <Button
                                 bg="orange.500"
@@ -422,7 +378,6 @@ const CadastroNews = () => {
                                 <Text fontSize="md" color="white" fontWeight="bold">Salvar Notícia</Text>
                             </Button>
 
-                            {/* ✅ CORREÇÃO: Botão Cancelar funcionando */}
                             <Button
                                 variant="outline"
                                 borderColor="blue.500"

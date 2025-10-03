@@ -1,4 +1,3 @@
-// components/CardNews.tsx
 import React from "react";
 import { router } from "expo-router"; 
 import { 
@@ -14,16 +13,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 interface NewsCardProps {
-  id: number; // ADICIONE ESTA LINHA
+  id: number; 
   image: string;
   title: string;
   authors: string;
   description: string;
-  categoria?: string; // ADICIONE ESTA LINHA TAMBÉM
+  categoria?: string;
 }
 
 function CardNews({
-  id, // RECEBA O ID
+  id,
   image,
   title,
   authors,
@@ -31,12 +30,10 @@ function CardNews({
   categoria,
 }: NewsCardProps) {
 
-  // FUNÇÃO PARA NAVEGAR COM O ID
   const handleLerMais = () => {
-    console.log('Navegando para notícia ID:', id);
     router.push({
       pathname: '/pages/detalhesNoticias',
-      params: { id: id.toString() } // PASSA O ID COMO PARÂMETRO
+      params: { id: id.toString() }
     });
   };
 
@@ -50,9 +47,7 @@ function CardNews({
         resizeMode="cover"
       />
 
-      {/* card */}
       <VStack p={5} space={3}>
-        {/* Categoria (se disponível) */}
         {categoria && (
           <Box alignSelf="flex-start">
             <Text 
@@ -74,7 +69,7 @@ function CardNews({
           fontWeight="bold" 
           color="gray.800" 
           lineHeight="sm"
-          numberOfLines={2} // Limita a 2 linhas
+          numberOfLines={2}
         >
           {title}
         </Text>
@@ -83,7 +78,7 @@ function CardNews({
           fontSize="sm" 
           color="blue.600" 
           fontWeight="semibold"
-          numberOfLines={1} // Limita a 1 linha
+          numberOfLines={1}
         >
           {authors}
         </Text>
@@ -92,7 +87,7 @@ function CardNews({
           fontSize="sm" 
           color="gray.600" 
           lineHeight="sm"
-          numberOfLines={3} // Limita a 3 linhas
+          numberOfLines={3}
         >
           {description}
         </Text>
@@ -102,26 +97,23 @@ function CardNews({
             <Pressable>
               {({ isPressed }) => (
                 <HStack alignItems="center" space={1} opacity={isPressed ? 0.7 : 1}>
-                  <Icon 
+                  {/* <Icon 
                     as={Ionicons} 
                     name="heart-outline" 
                     size="sm" 
                     color="gray.500" 
-                  />
+                  /> */}
                 </HStack>
               )}
             </Pressable>
-
-            {/* Comentários e shares podem ser adicionados depois */}
           </HStack>
 
-          {/* BOTÃO CORRIGIDO - AGORA PASSA O ID */}
           <Button
             size="sm"
             bg="blue.500"
             rounded="lg"
             shadow={2}
-            onPress={handleLerMais} // USA A FUNÇÃO QUE PASSA O ID
+            onPress={handleLerMais}
             _pressed={{ bg: "blue.600" }}
           >
             <Text 

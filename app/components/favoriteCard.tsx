@@ -6,7 +6,7 @@ export interface FavoriteItem {
   id: number;
   titulo: string;
   descricao: string;
-  imagem: string;
+  imagemURL: string;
   categoria: string;
   autor: string;
   dataPublicacao: string;
@@ -39,10 +39,9 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
             borderWidth={1}
             borderColor="gray.100"
           >
-            {/* Imagem com fallback */}
-            {item.imagem ? (
+            {item.imagemURL ? (
               <Image
-                source={{ uri: item.imagem }}
+                source={{ uri: item.imagemURL }}
                 alt={item.titulo}
                 w="full"
                 h={32}
@@ -59,7 +58,6 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
               </Center>
             )}
 
-            {/* Badge de categoria */}
             <Box position="absolute" top={2} left={2}>
               <Box 
                 bg="primary.700" 
@@ -73,7 +71,6 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
               </Box>
             </Box>
 
-            {/* Conteúdo */}
             <Box p={3} pb={10}>
               <Text
                 fontSize="sm"
@@ -94,7 +91,6 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
               </Text>
             </Box>
 
-            {/* Botão de remover */}
             <Box position="absolute" bottom={2} right={2}>
               <Pressable 
                 onPress={() => onRemove(item.id, item.titulo)}

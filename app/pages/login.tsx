@@ -4,11 +4,11 @@ import {
   NativeBaseProvider, Box, VStack, Input, Button, Center, Link, Text,
   Icon, Pressable, Checkbox, Image,
 } from "native-base";
-
-import logo from "../../assets/images/logo.png";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ADICIONE ESTA IMPORT
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import logo from "../../assets/images/logo.png";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -16,7 +16,8 @@ export default function LoginScreen() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  // No LoginScreen - função fazerLogin
+  const API_BASE_URL = 'http://localhost:3000/api';
+
   const fazerLogin = async () => {
     if (!email || !senha) {
       Alert.alert("Erro", "Por favor, preencha todos os campos");
@@ -26,7 +27,7 @@ export default function LoginScreen() {
     setCarregando(true);
 
     try {
-      const resposta = await fetch('http://localhost:3000/api/auth/login', {
+      const resposta = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,16 +41,9 @@ export default function LoginScreen() {
       const dados = await resposta.json();
 
       if (resposta.ok) {
-        // Login bem-sucedido - SALVAR O TOKEN!
-        console.log('Login realizado com sucesso:', dados);
-
-        // SALVAR TOKEN NO ASYNCSTORAGE
         if (dados.token) {
           await AsyncStorage.setItem('userToken', dados.token);
           await AsyncStorage.setItem('loginTime', Date.now().toString());
-          console.log('Token salvo com sucesso');
-        } else {
-          console.log('Token não veio na resposta:', dados);
         }
 
         if (dados.usuario) {
@@ -59,10 +53,8 @@ export default function LoginScreen() {
         Alert.alert("Sucesso", "Login realizado com sucesso!");
 
         if (dados.usuario.isAdmin) {
-          console.log('Redirecionando para ADMIN');
           router.replace('/pages/admin/admin'); 
         } else {
-          console.log('Redirecionando para HOME (usuário normal)');
           router.replace('/pages/home'); 
         }
       } else {
@@ -75,6 +67,7 @@ export default function LoginScreen() {
       setCarregando(false);
     }
   };
+
   const testarConexao = async () => {
     try {
       const resposta = await fetch('http://localhost:3000/');
