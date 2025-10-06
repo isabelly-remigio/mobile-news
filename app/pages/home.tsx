@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
-  NativeBaseProvider,
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Avatar,
-  ScrollView,
-  Icon,
-  Center,
-  Pressable,
-  extendTheme,
-  Spinner,
-  Button,
-  Alert,
+  NativeBaseProvider,Box,VStack,HStack,Text,Avatar,ScrollView,Icon,
+  Center,Pressable,extendTheme,Spinner,Button,Alert,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import Footer from "../components/footer";
@@ -330,13 +318,13 @@ const Home = () => {
               </HStack>
             </Box>
 
-            {/* Seção de notícias */}
+{/* Seção de notícias */}
             <Box px={5} py={2}>
               <Text fontSize="xl" fontWeight="bold" color="gray.800" mb={5}>
                 Últimas Notícias
               </Text>
 
-              {/* Banner de incentivo ao login */}
+{/* Banner de incentivo ao login */}
               {!usuarioLogado && (
                 <Center bg="blue.50" p={4} rounded="lg" mb={4}>
                   <HStack space={3} alignItems="center">

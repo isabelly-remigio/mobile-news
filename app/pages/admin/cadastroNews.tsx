@@ -153,10 +153,7 @@ const CadastroNews = () => {
                 Alert.alert('Sucesso', 'Notícia salva com sucesso!', [
                     {
                         text: 'OK',
-                        onPress: () => {
-                            // CORREÇÃO: Usar replace em vez de navigate para evitar voltar para esta tela
-                            router.replace('/pages/admin/admin');
-                        }
+                        onPress: () => router.replace('/pages/admin/admin')
                     }
                 ]);
             } else {
@@ -185,10 +182,7 @@ const CadastroNews = () => {
                 'Tem certeza que deseja cancelar? Os dados não salvos serão perdidos.',
                 [
                     { text: 'Continuar editando', style: 'cancel' },
-                    { 
-                        text: 'Cancelar', 
-                        onPress: () => router.replace('/pages/admin/admin')
-                    }
+                    { text: 'Cancelar', onPress: () => router.replace('/pages/admin/admin') }
                 ]
             );
         } else {
